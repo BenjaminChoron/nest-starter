@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './contexts/auth/auth.module';
+import { UserModule } from './contexts/user/user.module';
 import { getTypeOrmConfig } from './config/typeorm.config';
 
 @Module({
@@ -15,6 +16,7 @@ import { getTypeOrmConfig } from './config/typeorm.config';
       inject: [ConfigService],
     }),
     AuthModule,
+    UserModule,
   ],
 })
 export class AppModule {}
