@@ -8,7 +8,7 @@ import { CreateUserHandler } from './application/commands/handlers/create-user.h
 import { UpdateUserProfileHandler } from './application/commands/handlers/update-user-profile.handler';
 import { GetUserByIdHandler } from './application/queries/handlers/get-user-by-id.handler';
 import { USER_REPOSITORY } from './domain/user.repository';
-import { UserController } from './presentation/user.controller';
+import { UserController } from './interfaces/http/controllers/user.controller';
 import { UserRegistrationSaga } from './application/sagas/user-registration.saga';
 
 const CommandHandlers = [CreateUserHandler, UpdateUserProfileHandler];

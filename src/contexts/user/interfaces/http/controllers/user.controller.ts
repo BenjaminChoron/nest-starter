@@ -2,13 +2,13 @@ import { Body, Controller, Get, Param, Post, Put, UseGuards } from '@nestjs/comm
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiTags, ApiOkResponse, ApiCreatedResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/contexts/auth/interfaces/http/guards/jwt-auth.guard';
-import { CreateUserCommand } from '../application/commands/create-user.command';
-import { UpdateUserProfileCommand } from '../application/commands/update-user-profile.command';
-import { GetUserByIdQuery } from '../application/queries/get-user-by-id.query';
-import { User } from '../domain/user.entity';
-import { CreateUserDto } from './dtos/create-user.dto';
-import { UpdateUserProfileDto } from './dtos/update-user-profile.dto';
-import { UserResponseDto } from './dtos/user-response.dto';
+import { CreateUserCommand } from '../../../application/commands/create-user.command';
+import { UpdateUserProfileCommand } from '../../../application/commands/update-user-profile.command';
+import { GetUserByIdQuery } from '../../../application/queries/get-user-by-id.query';
+import { User } from '../../../domain/user.entity';
+import { CreateUserDto } from '../dtos/create-user.dto';
+import { UpdateUserProfileDto } from '../dtos/update-user-profile.dto';
+import { UserResponseDto } from '../dtos/user-response.dto';
 
 @ApiTags('Users')
 @Controller('users')
