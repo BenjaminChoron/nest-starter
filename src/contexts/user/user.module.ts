@@ -9,9 +9,11 @@ import { UpdateUserProfileHandler } from './application/commands/handlers/update
 import { GetUserByIdHandler } from './application/queries/handlers/get-user-by-id.handler';
 import { USER_REPOSITORY } from './domain/user.repository';
 import { UserController } from './presentation/user.controller';
+import { UserRegistrationSaga } from './application/sagas/user-registration.saga';
 
 const CommandHandlers = [CreateUserHandler, UpdateUserProfileHandler];
 const QueryHandlers = [GetUserByIdHandler];
+const Sagas = [UserRegistrationSaga];
 
 @Module({
   imports: [CqrsModule, TypeOrmModule.forFeature([UserEntity]), AuthModule],
@@ -19,6 +21,7 @@ const QueryHandlers = [GetUserByIdHandler];
   providers: [
     ...CommandHandlers,
     ...QueryHandlers,
+    ...Sagas,
     {
       provide: USER_REPOSITORY,
       useClass: TypeOrmUserRepository,

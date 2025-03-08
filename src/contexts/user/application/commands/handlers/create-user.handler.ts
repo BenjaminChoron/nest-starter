@@ -3,7 +3,7 @@ import { Inject } from '@nestjs/common';
 import { CreateUserCommand } from '../create-user.command';
 import { UserRepository, USER_REPOSITORY } from '../../../domain/user.repository';
 import { User } from '../../../domain/user.entity';
-import { UserAlreadyExistsException } from '../../../domain/exceptions/user-already-exists.exception';
+import { UserAlreadyExistsException } from '../../../../../common/exceptions/user-already-exists.exception';
 
 @CommandHandler(CreateUserCommand)
 export class CreateUserHandler implements ICommandHandler<CreateUserCommand> {
