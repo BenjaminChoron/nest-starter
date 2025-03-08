@@ -1,0 +1,122 @@
+{
+  "info": {
+    "_postman_id": "1234567-89ab-cdef-0123-456789abcdef",
+    "name": "Nest Starter API",
+    "description": "Collection for testing the Nest Starter API endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = JSON.parse(responseBody);",
+                  "pm.test(\"Registration successful\", function () {",
+                  "    pm.expect(jsonData.message).to.equal(\"User registered successfully\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"{{email}}\",\n    \"password\": \"{{password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Register a new user"
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = JSON.parse(responseBody);",
+                  "if (jsonData.access_token) {",
+                  "    pm.environment.set(\"access_token\", jsonData.access_token);",
+                  "    console.log(\"Access token saved to environment\");",
+                  "    pm.test(\"Login successful\", function () {",
+                  "        pm.expect(jsonData.access_token).to.be.a('string');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"{{email}}\",\n    \"password\": \"{{password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login with email and password"
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global Pre-request Script",
+          "if (!pm.environment.get('base_url')) {",
+          "    console.log('Setting default base_url');",
+          "    pm.environment.set('base_url', 'http://localhost:3000');",
+          "}",
+          "",
+          "// Check if access token is expired and needs refresh",
+          "if (pm.environment.get('access_token')) {",
+          "    try {",
+          "        const token = pm.environment.get('access_token');",
+          "        const tokenData = JSON.parse(atob(token.split('.')[1]));",
+          "        const expirationTime = tokenData.exp * 1000;",
+          "        ",
+          "        if (Date.now() >= expirationTime) {",
+          "            console.log('Token expired, needs refresh');",
+          "            // You can add token refresh logic here",
+          "        }",
+          "    } catch (e) {",
+          "        console.error('Error checking token expiration:', e);",
+          "    }",
+          "}"
+        ]
+      }
+    }
+  ]
+}
