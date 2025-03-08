@@ -1,5 +1,10 @@
 # NestJS Starter
 
+[![NestJS](https://img.shields.io/badge/NestJS-v11-ea2845.svg)](https://nestjs.com/)
+[![Node](https://img.shields.io/badge/Node-%3E%3D18-brightgreen.svg)](https://nodejs.org)
+[![PNPM](https://img.shields.io/badge/pnpm-latest-orange.svg)](https://pnpm.io/)
+[![License](https://img.shields.io/badge/license-UNLICENSED-red.svg)]()
+
 A modern, well-structured NestJS starter template with best practices and essential tooling pre-configured.
 
 ## Features
@@ -96,6 +101,44 @@ Tests are written using Jest. The configuration can be found in:
 
 - `jest` section in `package.json` for unit tests
 - `test/jest-e2e.json` for end-to-end tests
+
+### API Testing with Postman
+
+The project includes a comprehensive Postman collection for testing the API endpoints:
+
+- `postman/nest-starter.postman_collection.json` - API endpoints collection
+- `postman/nest-starter.postman_environment.json` - Environment variables
+
+To use the Postman collection:
+
+1. Import both files into Postman
+2. Select the "Nest Starter Local" environment
+3. Update the environment variables if needed (default URL is `http://localhost:3000`)
+4. Use the provided endpoints to test the API
+
+The collection includes:
+
+- Authentication endpoints (register, login)
+- Automatic access token management
+- Environment variable handling
+- Test scripts for response validation
+
+### API Documentation with Swagger
+
+The API documentation is automatically generated using Swagger/OpenAPI. Once the application is running, you can access the interactive API documentation at:
+
+```
+http://localhost:3000/api
+```
+
+The Swagger UI provides:
+
+- Detailed API endpoint documentation
+- Request/response schemas
+- Interactive API testing interface
+- Authentication support
+- Models and DTOs documentation
+- API endpoint examples
 
 ## License
 
