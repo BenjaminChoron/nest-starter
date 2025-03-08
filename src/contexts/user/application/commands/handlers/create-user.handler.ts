@@ -3,6 +3,7 @@ import { Inject } from '@nestjs/common';
 import { CreateUserCommand } from '../create-user.command';
 import { UserRepository, USER_REPOSITORY } from '../../../domain/user.repository';
 import { User } from '../../../domain/user.entity';
+import { UserAlreadyExistsException } from '../../../domain/exceptions/user-already-exists.exception';
 
 @CommandHandler(CreateUserCommand)
 export class CreateUserHandler implements ICommandHandler<CreateUserCommand> {
@@ -14,9 +15,9 @@ export class CreateUserHandler implements ICommandHandler<CreateUserCommand> {
   async execute(command: CreateUserCommand): Promise<void> {
     const { id, email, firstName, lastName, profilePicture, phone, address } = command;
 
-    const existingUser = await this.userRepository.findByEmail(email);
+    const existingUser = await this.userRepository.findByEmail(email.toString());
     if (existingUser) {
-      throw new Error('User with this email already exists');
+      throw new UserAlreadyExistsException(email.toString());
     }
 
     const user = User.create(id, email, firstName, lastName, profilePicture, phone, address);

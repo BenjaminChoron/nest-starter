@@ -40,14 +40,10 @@ export class UserEntity {
   }
 
   toDomain(): DomainUser {
-    return new DomainUser(
-      this.id,
-      Email.create(this.email),
-      this.firstName,
-      this.lastName,
-      this.profilePicture,
-      this.phone ? Phone.create(this.phone) : undefined,
-      this.address ? Address.create(this.address) : undefined,
-    );
+    const emailVO = Email.create(this.email);
+    const phoneVO = this.phone ? Phone.create(this.phone) : undefined;
+    const addressVO = this.address ? Address.create(this.address) : undefined;
+
+    return new DomainUser(this.id, emailVO, this.firstName, this.lastName, this.profilePicture, phoneVO, addressVO);
   }
 }

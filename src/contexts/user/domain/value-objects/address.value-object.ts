@@ -1,3 +1,5 @@
+import { InvalidAddressException } from '../exceptions/invalid-address.exception';
+
 export class Address {
   private constructor(private readonly value: string) {
     this.ensureValidAddress(value);
@@ -5,7 +7,7 @@ export class Address {
 
   private ensureValidAddress(address: string): void {
     if (!address || address.trim().length < 5) {
-      throw new Error('Address must be at least 5 characters long');
+      throw new InvalidAddressException(address);
     }
   }
 

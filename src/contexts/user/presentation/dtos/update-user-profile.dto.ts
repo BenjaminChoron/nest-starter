@@ -21,7 +21,6 @@ export class UpdateUserProfileDto {
   @ApiPropertyOptional({ description: 'User phone number' })
   @IsString()
   @IsOptional()
-  @Matches(/^\+?[\d\s-]{8,}$/, { message: 'Invalid phone number format' })
   phone?: string;
 
   @ApiPropertyOptional({ description: 'User address' })

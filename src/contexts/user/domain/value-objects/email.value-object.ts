@@ -1,3 +1,5 @@
+import { InvalidEmailException } from '../exceptions/invalid-email.exception';
+
 export class Email {
   private constructor(private readonly value: string) {
     this.ensureValidEmail(value);
@@ -6,7 +8,7 @@ export class Email {
   private ensureValidEmail(email: string): void {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      throw new Error('Invalid email format');
+      throw new InvalidEmailException(email);
     }
   }
 

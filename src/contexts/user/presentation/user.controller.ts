@@ -21,15 +21,8 @@ export class UserController {
   @Post()
   @ApiCreatedResponse({ description: 'User created successfully' })
   async createUser(@Body() createUserDto: CreateUserDto): Promise<void> {
-    const command = new CreateUserCommand(
-      createUserDto.id,
-      createUserDto.email,
-      createUserDto.firstName,
-      createUserDto.lastName,
-      createUserDto.profilePicture,
-      createUserDto.phone,
-      createUserDto.address,
-    );
+    const { id, email, firstName, lastName, profilePicture, phone, address } = createUserDto;
+    const command = new CreateUserCommand(id, email, firstName, lastName, profilePicture, phone, address);
     await this.commandBus.execute(command);
   }
 
@@ -38,14 +31,8 @@ export class UserController {
   @ApiBearerAuth()
   @ApiOkResponse({ description: 'User profile updated successfully' })
   async updateUserProfile(@Param('id') id: string, @Body() updateUserDto: UpdateUserProfileDto): Promise<void> {
-    const command = new UpdateUserProfileCommand(
-      id,
-      updateUserDto.firstName,
-      updateUserDto.lastName,
-      updateUserDto.profilePicture,
-      updateUserDto.phone,
-      updateUserDto.address,
-    );
+    const { firstName, lastName, profilePicture, phone, address } = updateUserDto;
+    const command = new UpdateUserProfileCommand(id, firstName, lastName, profilePicture, phone, address);
     await this.commandBus.execute(command);
   }
 

@@ -46,37 +46,39 @@ export class User extends AggregateRoot {
     return this._address?.toString();
   }
 
-  updateProfile(firstName: string, lastName: string, profilePicture?: string, phone?: string, address?: string): void {
+  updateProfile(firstName: string, lastName: string, profilePicture?: string, phone?: Phone, address?: Address): void {
     this._firstName = firstName;
     this._lastName = lastName;
     this._profilePicture = profilePicture;
-    this._phone = phone ? Phone.create(phone) : undefined;
-    this._address = address ? Address.create(address) : undefined;
+    this._phone = phone;
+    this._address = address;
 
-    this.apply(new UserUpdatedEvent(this.id, firstName, lastName, profilePicture, phone, address));
+    this.apply(
+      new UserUpdatedEvent(this.id, firstName, lastName, profilePicture, phone?.toString(), address?.toString()),
+    );
   }
 
   static create(
     id: string,
-    email: string,
+    email: Email,
     firstName: string,
     lastName: string,
     profilePicture?: string,
-    phone?: string,
-    address?: string,
+    phone?: Phone,
+    address?: Address,
   ): User {
-    const user = new User(
-      id,
-      Email.create(email),
-      firstName,
-      lastName,
-      profilePicture,
-      phone ? Phone.create(phone) : undefined,
-      address ? Address.create(address) : undefined,
+    const user = new User(id, email, firstName, lastName, profilePicture, phone, address);
+    user.apply(
+      new UserCreatedEvent(
+        id,
+        email.toString(),
+        firstName,
+        lastName,
+        profilePicture,
+        phone?.toString(),
+        address?.toString(),
+      ),
     );
-
-    user.apply(new UserCreatedEvent(id, email, firstName, lastName, profilePicture, phone, address));
-
     return user;
   }
 }

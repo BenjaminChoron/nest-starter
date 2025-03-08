@@ -1,3 +1,5 @@
+import { InvalidPhoneException } from '../exceptions/invalid-phone.exception';
+
 export class Phone {
   private constructor(private readonly value: string) {
     this.ensureValidPhone(value);
@@ -7,7 +9,7 @@ export class Phone {
     // Basic phone number validation (can be enhanced based on requirements)
     const phoneRegex = /^\+?[\d\s-]{8,}$/;
     if (!phoneRegex.test(phone)) {
-      throw new Error('Invalid phone number format');
+      throw new InvalidPhoneException(phone);
     }
   }
 
