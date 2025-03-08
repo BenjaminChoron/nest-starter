@@ -31,6 +31,7 @@
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/swagger": "^11.0.6",
     "@nestjs/typeorm": "^11.0.0",
+    "@sendgrid/mail": "^8.1.4",
     "@types/bcrypt": "^5.0.2",
     "@types/passport-jwt": "^4.0.1",
     "@types/passport-local": "^1.0.38",

@@ -12,18 +12,23 @@ import { LocalAuthGuard } from './interfaces/http/guards/local-auth.guard';
 import { JwtAuthGuard } from './interfaces/http/guards/jwt-auth.guard';
 import { RegisterUserHandler } from './application/handlers/register-user.handler';
 import { LoginUserHandler } from './application/handlers/login-user.handler';
+import { VerifyEmailHandler } from './application/handlers/verify-email.handler';
+import { EmailVerificationSaga } from './application/sagas/email-verification.saga';
 import { USER_REPOSITORY } from './domain/repositories/user.repository.interface';
 import { TypeOrmUserRepository } from './infrastructure/persistence/typeorm/typeorm-user.repository';
 import { UserEntity } from './infrastructure/persistence/typeorm/user.entity';
+import { SharedModule } from '../shared/shared.module';
 
-const commandHandlers = [RegisterUserHandler, LoginUserHandler];
+const commandHandlers = [RegisterUserHandler, LoginUserHandler, VerifyEmailHandler];
 const strategies = [LocalStrategy, JwtStrategy];
 const guards = [LocalAuthGuard, JwtAuthGuard];
+const sagas = [EmailVerificationSaga];
 
 @Module({
   imports: [
     CqrsModule,
     PassportModule,
+    SharedModule,
     TypeOrmModule.forFeature([UserEntity]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -39,6 +44,7 @@ const guards = [LocalAuthGuard, JwtAuthGuard];
     ...commandHandlers,
     ...strategies,
     ...guards,
+    ...sagas,
     {
       provide: USER_REPOSITORY,
       useClass: TypeOrmUserRepository,

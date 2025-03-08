@@ -8,6 +8,9 @@ export class User extends AggregateRoot {
     private readonly _email: Email,
     private _password: Password,
     private readonly _roles: string[] = ['user'],
+    private _isEmailVerified: boolean = false,
+    private _verificationToken: string | null = null,
+    private _verificationTokenExpiresAt: Date | null = null,
   ) {
     super();
   }
@@ -24,6 +27,29 @@ export class User extends AggregateRoot {
     return [...this._roles];
   }
 
+  get isEmailVerified(): boolean {
+    return this._isEmailVerified;
+  }
+
+  get verificationToken(): string | null {
+    return this._verificationToken;
+  }
+
+  get verificationTokenExpiresAt(): Date | null {
+    return this._verificationTokenExpiresAt;
+  }
+
+  setVerificationToken(token: string, expiresAt: Date): void {
+    this._verificationToken = token;
+    this._verificationTokenExpiresAt = expiresAt;
+  }
+
+  verify(): void {
+    this._isEmailVerified = true;
+    this._verificationToken = null;
+    this._verificationTokenExpiresAt = null;
+  }
+
   async validatePassword(password: string): Promise<boolean> {
     return this._password.compare(password);
   }
@@ -37,6 +63,7 @@ export class User extends AggregateRoot {
       id: this._id,
       email: this._email.toString(),
       roles: this._roles,
+      isEmailVerified: this._isEmailVerified,
     };
   }
 }

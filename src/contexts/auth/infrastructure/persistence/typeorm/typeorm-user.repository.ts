@@ -30,4 +30,16 @@ export class TypeOrmUserRepository implements IUserRepository {
     const userEntity = UserEntity.fromDomain(user);
     await this.userRepository.save(userEntity);
   }
+
+  async findByVerificationToken(token: string): Promise<User | null> {
+    const entity = await this.userRepository.findOne({
+      where: { verificationToken: token },
+    });
+
+    if (!entity) {
+      return null;
+    }
+
+    return entity.toDomain();
+  }
 }

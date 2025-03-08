@@ -1,7 +1,7 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { LoginUserCommand } from '../commands/login-user.command';
 import { IUserRepository, USER_REPOSITORY } from '../../domain/repositories/user.repository.interface';
-import { Inject } from '@nestjs/common';
+import { Inject, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InvalidCredentialsException } from '../../../../common/exceptions/invalid-credentials.exception';
 import { Email } from '../../domain/value-objects/email.value-object';
@@ -26,6 +26,10 @@ export class LoginUserHandler implements ICommandHandler<LoginUserCommand> {
     const isPasswordValid = await user.validatePassword(password);
     if (!isPasswordValid) {
       throw new InvalidCredentialsException();
+    }
+
+    if (!user.isEmailVerified) {
+      throw new UnauthorizedException('Please verify your email address before logging in');
     }
 
     const payload = { sub: user.id, email: user.email, roles: user.roles };

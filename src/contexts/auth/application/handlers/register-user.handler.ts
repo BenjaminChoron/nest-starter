@@ -30,9 +30,15 @@ export class RegisterUserHandler implements ICommandHandler<RegisterUserCommand>
     const passwordVO = await Password.create(password);
     const user = new User(userId, emailVO, passwordVO);
 
+    // Generate verification token
+    const verificationToken = randomUUID();
+    const tokenExpiresAt = new Date();
+    tokenExpiresAt.setHours(tokenExpiresAt.getHours() + 24); // Token expires in 24 hours
+    user.setVerificationToken(verificationToken, tokenExpiresAt);
+
     await this.userRepository.save(user);
 
-    const event = new UserRegisteredEvent(userId, email);
+    const event = new UserRegisteredEvent(userId, email, verificationToken);
     this.eventBus.publish(event);
   }
 }

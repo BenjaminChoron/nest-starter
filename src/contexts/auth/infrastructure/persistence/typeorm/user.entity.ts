@@ -17,18 +17,38 @@ export class UserEntity {
   @Column('simple-array')
   roles: string[];
 
+  @Column({ default: false })
+  isEmailVerified: boolean;
+
+  @Column({ nullable: true, type: 'varchar' })
+  verificationToken: string | null;
+
+  @Column({ nullable: true, type: 'timestamp' })
+  verificationTokenExpiresAt: Date | null;
+
   static fromDomain(domainUser: DomainUser): UserEntity {
     const entity = new UserEntity();
     entity.id = domainUser.id;
     entity.email = domainUser['_email'].toString();
     entity.password = domainUser['_password'].toString();
     entity.roles = domainUser.roles;
+    entity.isEmailVerified = domainUser['_isEmailVerified'];
+    entity.verificationToken = domainUser['_verificationToken'];
+    entity.verificationTokenExpiresAt = domainUser['_verificationTokenExpiresAt'];
     return entity;
   }
 
   async toDomain(): Promise<DomainUser> {
     const email = new Email(this.email);
     const password = await Password.createHashed(this.password);
-    return new DomainUser(this.id, email, password, this.roles);
+    return new DomainUser(
+      this.id,
+      email,
+      password,
+      this.roles,
+      this.isEmailVerified,
+      this.verificationToken,
+      this.verificationTokenExpiresAt,
+    );
   }
 }
