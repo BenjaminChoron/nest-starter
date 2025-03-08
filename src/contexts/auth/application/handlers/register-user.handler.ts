@@ -6,6 +6,8 @@ import { Inject } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { UserRegisteredEvent } from '../../domain/events/user-registered.event';
 import { UserAlreadyExistsException } from 'src/common/exceptions/user-already-exists.exception';
+import { Email } from '../../domain/value-objects/email.value-object';
+import { Password } from '../../domain/value-objects/password.value-object';
 
 @CommandHandler(RegisterUserCommand)
 export class RegisterUserHandler implements ICommandHandler<RegisterUserCommand> {
@@ -17,15 +19,16 @@ export class RegisterUserHandler implements ICommandHandler<RegisterUserCommand>
 
   async execute(command: RegisterUserCommand): Promise<void> {
     const { email, password } = command;
+    const emailVO = new Email(email);
 
-    const existingUser = await this.userRepository.findByEmail(email);
+    const existingUser = await this.userRepository.findByEmail(emailVO);
     if (existingUser) {
       throw new UserAlreadyExistsException(email);
     }
 
     const userId = randomUUID();
-    const user = new User(userId, email, '');
-    await user.setPassword(password);
+    const passwordVO = await Password.create(password);
+    const user = new User(userId, emailVO, passwordVO);
 
     await this.userRepository.save(user);
 

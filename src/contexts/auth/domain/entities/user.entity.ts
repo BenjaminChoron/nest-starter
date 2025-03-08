@@ -1,11 +1,12 @@
 import { AggregateRoot } from '@nestjs/cqrs';
-import * as bcrypt from 'bcrypt';
+import { Email } from '../value-objects/email.value-object';
+import { Password } from '../value-objects/password.value-object';
 
 export class User extends AggregateRoot {
   constructor(
     private readonly _id: string,
-    private readonly _email: string,
-    private _password: string,
+    private readonly _email: Email,
+    private _password: Password,
     private readonly _roles: string[] = ['user'],
   ) {
     super();
@@ -16,7 +17,7 @@ export class User extends AggregateRoot {
   }
 
   get email(): string {
-    return this._email;
+    return this._email.toString();
   }
 
   get roles(): string[] {
@@ -24,18 +25,17 @@ export class User extends AggregateRoot {
   }
 
   async validatePassword(password: string): Promise<boolean> {
-    return bcrypt.compare(password, this._password);
+    return this._password.compare(password);
   }
 
   async setPassword(password: string): Promise<void> {
-    const salt = await bcrypt.genSalt();
-    this._password = await bcrypt.hash(password, salt);
+    this._password = await Password.create(password);
   }
 
   toJSON() {
     return {
       id: this._id,
-      email: this._email,
+      email: this._email.toString(),
       roles: this._roles,
     };
   }

@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { IUserRepository } from '../../../domain/repositories/user.repository.interface';
 import { User } from '../../../domain/entities/user.entity';
 import { UserEntity } from './user.entity';
+import { Email } from '../../../domain/value-objects/email.value-object';
 
 @Injectable()
 export class TypeOrmUserRepository implements IUserRepository {
@@ -18,8 +19,10 @@ export class TypeOrmUserRepository implements IUserRepository {
     return userEntity ? userEntity.toDomain() : null;
   }
 
-  async findByEmail(email: string): Promise<User | null> {
-    const userEntity = await this.userRepository.findOne({ where: { email } });
+  async findByEmail(email: Email): Promise<User | null> {
+    const userEntity = await this.userRepository.findOne({
+      where: { email: email.toString() },
+    });
     return userEntity ? userEntity.toDomain() : null;
   }
 

@@ -4,6 +4,7 @@ import { IUserRepository, USER_REPOSITORY } from '../../domain/repositories/user
 import { Inject } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InvalidCredentialsException } from '../../../../common/exceptions/invalid-credentials.exception';
+import { Email } from '../../domain/value-objects/email.value-object';
 
 @CommandHandler(LoginUserCommand)
 export class LoginUserHandler implements ICommandHandler<LoginUserCommand> {
@@ -15,8 +16,9 @@ export class LoginUserHandler implements ICommandHandler<LoginUserCommand> {
 
   async execute(command: LoginUserCommand): Promise<{ access_token: string }> {
     const { email, password } = command;
+    const emailVO = new Email(email);
 
-    const user = await this.userRepository.findByEmail(email);
+    const user = await this.userRepository.findByEmail(emailVO);
     if (!user) {
       throw new InvalidCredentialsException();
     }

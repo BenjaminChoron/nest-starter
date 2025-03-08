@@ -1,19 +1,18 @@
 import { InvalidEmailException } from 'src/common/exceptions/invalid-email.exception';
 
 export class Email {
-  private constructor(private readonly value: string) {
-    this.ensureValidEmail(value);
+  private readonly value: string;
+
+  constructor(email: string) {
+    this.validate(email);
+    this.value = email;
   }
 
-  private ensureValidEmail(email: string): void {
+  private validate(email: string): void {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!email || !emailRegex.test(email)) {
       throw new InvalidEmailException(email);
     }
-  }
-
-  static create(value: string): Email {
-    return new Email(value);
   }
 
   toString(): string {
