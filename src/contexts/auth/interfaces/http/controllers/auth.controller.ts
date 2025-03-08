@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseGuards, Type } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards, Type, HttpCode, HttpStatus } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { RegisterUserCommand } from '../../../application/commands/register-user.command';
 import { LoginUserCommand } from '../../../application/commands/login-user.command';
@@ -22,6 +22,7 @@ export class AuthController {
 
   @UseGuards(LocalAuthGuard as Type<LocalAuthGuard>)
   @Post('login')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login with email and password' })
   @ApiBody({ type: AuthCredentialsDto })
   @ApiOkResponse({ type: LoginResponseDto })

@@ -2,12 +2,13 @@
   "info": {
     "_postman_id": "1234567-89ab-cdef-0123-456789abcdef",
     "name": "Nest Starter API",
-    "description": "Collection for testing the Nest Starter API endpoints",
+    "description": "Collection for testing the Nest Starter API endpoints. This collection includes authentication and user management endpoints with comprehensive test cases.\n\nSetup:\n1. Make sure the API is running at {{base_url}}\n2. Set up environment variables\n3. Run the collection in the following order:\n   - Register\n   - Login\n   - Create User\n   - Update User Profile\n   - Get User by ID",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
       "name": "Auth",
+      "description": "Authentication endpoints for user registration and login",
       "item": [
         {
           "name": "Register",
@@ -16,10 +17,41 @@
               "listen": "test",
               "script": {
                 "exec": [
+                  "// Parse response",
                   "var jsonData = JSON.parse(responseBody);",
-                  "pm.test(\"Registration successful\", function () {",
-                  "    pm.expect(jsonData.message).to.equal(\"User registered successfully\");",
-                  "});"
+                  "",
+                  "// Test successful registration",
+                  "pm.test(\"Status code is 201 Created\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "// Validate response structure according to RegisterResponseDto",
+                  "pm.test(\"Response matches RegisterResponseDto structure\", function () {",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData.message).to.equal('User registered successfully');",
+                  "});",
+                  "",
+                  "// Test error cases",
+                  "if (pm.response.code === 400) {",
+                  "    pm.test(\"Bad request error structure\", function () {",
+                  "        pm.expect(jsonData).to.have.property('message');",
+                  "        pm.expect(jsonData).to.have.property('error');",
+                  "        pm.expect(jsonData).to.have.property('statusCode');",
+                  "    });",
+                  "}",
+                  "",
+                  "if (pm.response.code === 409) {",
+                  "    pm.test(\"Conflict error structure\", function () {",
+                  "        pm.expect(jsonData.message).to.include('already exists');",
+                  "    });",
+                  "}",
+                  "",
+                  "// Save email for subsequent requests if registration was successful",
+                  "if (pm.response.code === 201) {",
+                  "    var requestData = JSON.parse(pm.request.body.raw);",
+                  "    pm.environment.set('last_registered_email', requestData.email);",
+                  "}"
                 ],
                 "type": "text/javascript"
               }
@@ -42,7 +74,7 @@
               "host": ["{{base_url}}"],
               "path": ["auth", "register"]
             },
-            "description": "Register a new user"
+            "description": "Register a new user with email and password"
           }
         },
         {
@@ -52,12 +84,46 @@
               "listen": "test",
               "script": {
                 "exec": [
+                  "// Parse response",
                   "var jsonData = JSON.parse(responseBody);",
+                  "",
+                  "// Test successful login",
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Validate response structure according to LoginResponseDto",
+                  "pm.test(\"Response matches LoginResponseDto structure\", function () {",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData).to.have.property('access_token');",
+                  "    pm.expect(jsonData.access_token).to.be.a('string');",
+                  "    pm.expect(jsonData.access_token).to.match(/^[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+$/);",
+                  "});",
+                  "",
+                  "// Validate JWT token structure",
                   "if (jsonData.access_token) {",
-                  "    pm.environment.set(\"access_token\", jsonData.access_token);",
-                  "    console.log(\"Access token saved to environment\");",
-                  "    pm.test(\"Login successful\", function () {",
-                  "        pm.expect(jsonData.access_token).to.be.a('string');",
+                  "    const tokenParts = jsonData.access_token.split('.');",
+                  "    pm.test(\"JWT token has valid structure\", function () {",
+                  "        pm.expect(tokenParts).to.have.lengthOf(3);",
+                  "        const payload = JSON.parse(atob(tokenParts[1]));",
+                  "        pm.expect(payload).to.have.property('sub');",
+                  "        pm.expect(payload).to.have.property('email');",
+                  "        pm.expect(payload).to.have.property('roles');",
+                  "        pm.expect(payload).to.have.property('exp');",
+                  "    });",
+                  "",
+                  "    // Save token and expiration",
+                  "    pm.environment.set('access_token', jsonData.access_token);",
+                  "    const payload = JSON.parse(atob(tokenParts[1]));",
+                  "    pm.environment.set('token_expiration', payload.exp * 1000);",
+                  "    console.log('Access token saved to environment');",
+                  "}",
+                  "",
+                  "// Test error cases",
+                  "if (pm.response.code === 401) {",
+                  "    pm.test(\"Unauthorized error structure\", function () {",
+                  "        pm.expect(jsonData).to.have.property('message');",
+                  "        pm.expect(jsonData.message).to.equal('Invalid credentials');",
                   "    });",
                   "}"
                 ],
@@ -82,7 +148,247 @@
               "host": ["{{base_url}}"],
               "path": ["auth", "login"]
             },
-            "description": "Login with email and password"
+            "description": "Login with email and password to receive JWT token"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "description": "User management endpoints for creating, updating, and retrieving user profiles",
+      "item": [
+        {
+          "name": "Create User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Parse response",
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "// Test successful creation",
+                  "pm.test(\"Status code is 201 Created\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "// Validate request structure according to CreateUserDto",
+                  "var requestData = JSON.parse(pm.request.body.raw);",
+                  "pm.test(\"Request matches CreateUserDto structure\", function () {",
+                  "    pm.expect(requestData).to.have.property('id').that.matches(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);",
+                  "    pm.expect(requestData).to.have.property('email').that.matches(/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/);",
+                  "    pm.expect(requestData).to.have.property('firstName').that.is.a('string').and.not.empty;",
+                  "    pm.expect(requestData).to.have.property('lastName').that.is.a('string').and.not.empty;",
+                  "    if (requestData.profilePicture) {",
+                  "        pm.expect(requestData.profilePicture).to.match(/^https?:\\/\\/.+/);",
+                  "    }",
+                  "    if (requestData.phone) {",
+                  "        pm.expect(requestData.phone).to.match(/^\\+?[\\d\\s-]{8,}$/);",
+                  "    }",
+                  "});",
+                  "",
+                  "// Store user ID for later use if needed",
+                  "if (requestData.id) {",
+                  "    pm.environment.set('user_id', requestData.id);",
+                  "    console.log('User ID saved:', requestData.id);",
+                  "}",
+                  "",
+                  "// Test error cases",
+                  "if (pm.response.code === 400) {",
+                  "    pm.test(\"Bad request error structure\", function () {",
+                  "        pm.expect(jsonData).to.have.property('message');",
+                  "        pm.expect(jsonData).to.have.property('error');",
+                  "        pm.expect(jsonData).to.have.property('statusCode');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"id\": \"{{$guid}}\",\n    \"email\": \"{{email}}\",\n    \"firstName\": \"{{test_first_name}}\",\n    \"lastName\": \"{{test_last_name}}\",\n    \"profilePicture\": \"{{test_profile_picture}}\",\n    \"phone\": \"{{test_phone}}\",\n    \"address\": \"{{test_address}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users",
+              "host": ["{{base_url}}"],
+              "path": ["users"]
+            },
+            "description": "Create a new user profile with detailed information"
+          }
+        },
+        {
+          "name": "Update User Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Parse response",
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "// Test successful update",
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Validate request structure according to UpdateUserProfileDto",
+                  "var requestData = JSON.parse(pm.request.body.raw);",
+                  "pm.test(\"Request matches UpdateUserProfileDto structure\", function () {",
+                  "    pm.expect(requestData).to.have.property('firstName').that.is.a('string').and.not.empty;",
+                  "    pm.expect(requestData).to.have.property('lastName').that.is.a('string').and.not.empty;",
+                  "    if (requestData.profilePicture) {",
+                  "        pm.expect(requestData.profilePicture).to.match(/^https?:\\/\\/.+/);",
+                  "    }",
+                  "    if (requestData.phone) {",
+                  "        pm.expect(requestData.phone).to.match(/^\\+?[\\d\\s-]{8,}$/);",
+                  "    }",
+                  "});",
+                  "",
+                  "// Test authorization",
+                  "pm.test(\"Authorization header is present\", function () {",
+                  "    pm.expect(pm.request.headers.has('Authorization')).to.be.true;",
+                  "    const authHeader = pm.request.headers.get('Authorization');",
+                  "    pm.expect(authHeader).to.include('Bearer');",
+                  "});",
+                  "",
+                  "// Test error cases",
+                  "if (pm.response.code === 401) {",
+                  "    pm.test(\"Unauthorized error structure\", function () {",
+                  "        pm.expect(jsonData).to.have.property('message');",
+                  "        pm.expect(jsonData.message).to.equal('Unauthorized');",
+                  "    });",
+                  "}",
+                  "",
+                  "if (pm.response.code === 400) {",
+                  "    pm.test(\"Bad request error structure\", function () {",
+                  "        pm.expect(jsonData).to.have.property('message');",
+                  "        pm.expect(jsonData).to.have.property('error');",
+                  "        pm.expect(jsonData).to.have.property('statusCode');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"firstName\": \"{{test_first_name}}\",\n    \"lastName\": \"{{test_last_name}}\",\n    \"profilePicture\": \"{{test_profile_picture}}\",\n    \"phone\": \"{{test_phone}}\",\n    \"address\": \"{{test_address}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/:id",
+              "host": ["{{base_url}}"],
+              "path": ["users", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{user_id}}",
+                  "description": "User ID"
+                }
+              ]
+            },
+            "description": "Update user profile information (requires authentication)"
+          }
+        },
+        {
+          "name": "Get User by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Parse response",
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "// Test successful retrieval",
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Validate response structure according to UserResponseDto",
+                  "pm.test(\"Response matches UserResponseDto structure\", function () {",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData).to.have.property('id').that.matches(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);",
+                  "    pm.expect(jsonData).to.have.property('email').that.matches(/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/);",
+                  "    pm.expect(jsonData).to.have.property('firstName').that.is.a('string').and.not.empty;",
+                  "    pm.expect(jsonData).to.have.property('lastName').that.is.a('string').and.not.empty;",
+                  "    if (jsonData.profilePicture) {",
+                  "        pm.expect(jsonData.profilePicture).to.match(/^https?:\\/\\/.+/);",
+                  "    }",
+                  "    if (jsonData.phone) {",
+                  "        pm.expect(jsonData.phone).to.match(/^\\+?[\\d\\s-]{8,}$/);",
+                  "    }",
+                  "});",
+                  "",
+                  "// Test authorization",
+                  "pm.test(\"Authorization header is present and valid\", function () {",
+                  "    pm.expect(pm.request.headers.has('Authorization')).to.be.true;",
+                  "    const authHeader = pm.request.headers.get('Authorization');",
+                  "    pm.expect(authHeader).to.include('Bearer');",
+                  "});",
+                  "",
+                  "// Test error cases",
+                  "if (pm.response.code === 401) {",
+                  "    pm.test(\"Unauthorized error structure\", function () {",
+                  "        pm.expect(jsonData).to.have.property('message');",
+                  "        pm.expect(jsonData.message).to.equal('Unauthorized');",
+                  "    });",
+                  "}",
+                  "",
+                  "if (pm.response.code === 404) {",
+                  "    pm.test(\"Not found error structure\", function () {",
+                  "        pm.expect(jsonData).to.have.property('message');",
+                  "        pm.expect(jsonData.message).to.include('not found');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/:id",
+              "host": ["{{base_url}}"],
+              "path": ["users", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{user_id}}",
+                  "description": "User ID"
+                }
+              ]
+            },
+            "description": "Get user profile by ID (requires authentication)"
           }
         }
       ]
@@ -106,15 +412,34 @@
           "        const token = pm.environment.get('access_token');",
           "        const tokenData = JSON.parse(atob(token.split('.')[1]));",
           "        const expirationTime = tokenData.exp * 1000;",
-          "        ",
-          "        if (Date.now() >= expirationTime) {",
-          "            console.log('Token expired, needs refresh');",
-          "            // You can add token refresh logic here",
+          "        const currentTime = Date.now();",
+          "        const timeUntilExpiration = expirationTime - currentTime;",
+          "",
+          "        if (timeUntilExpiration <= 0) {",
+          "            console.log('Token expired, clearing token');",
+          "            pm.environment.unset('access_token');",
+          "        } else if (timeUntilExpiration < 300000) { // 5 minutes",
+          "            console.log('Token expires in less than 5 minutes');",
           "        }",
           "    } catch (e) {",
           "        console.error('Error checking token expiration:', e);",
           "    }",
-          "}"
+          "}",
+          "",
+          "// Set default values for missing environment variables",
+          "const defaults = {",
+          "    'test_first_name': 'John',",
+          "    'test_last_name': 'Doe',",
+          "    'test_phone': '+1234567890',",
+          "    'test_address': '123 Main St, City, Country',",
+          "    'test_profile_picture': 'https://example.com/profile.jpg'",
+          "};",
+          "",
+          "Object.entries(defaults).forEach(([key, value]) => {",
+          "    if (!pm.environment.get(key)) {",
+          "        pm.environment.set(key, value);",
+          "    }",
+          "});"
         ]
       }
     }
