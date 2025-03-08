@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "1234567-89ab-cdef-0123-456789abcdef",
     "name": "Nest Starter API",
-    "description": "Collection for testing the Nest Starter API endpoints. This collection includes authentication and user management endpoints with comprehensive test cases.\n\nSetup:\n1. Make sure the API is running at {{base_url}}\n2. Set up environment variables\n3. Run the collection in the following order:\n   - Register\n   - Login\n   - Create User\n   - Update User Profile\n   - Get User by ID",
+    "description": "Collection for testing the Nest Starter API endpoints. This collection includes authentication and user management endpoints with comprehensive test cases.\n\nSetup:\n1. Make sure the API is running at {{base_url}}\n2. Set up environment variables\n3. Run the collection in the following order:\n   - Register\n   - Login\n   - Create User\n   - Update User Profile\n   - Get User by ID\n\nPassword Requirements:\n- Length: 8-64 characters\n- Must contain at least one uppercase letter\n- Must contain at least one lowercase letter\n- Must contain at least one number\n- Must contain at least one special character (@$!%*?&)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -32,12 +32,25 @@
                   "    pm.expect(jsonData.message).to.equal('User registered successfully');",
                   "});",
                   "",
-                  "// Test error cases",
+                  "// Test password validation errors",
                   "if (pm.response.code === 400) {",
-                  "    pm.test(\"Bad request error structure\", function () {",
+                  "    pm.test(\"Password validation error structure\", function () {",
                   "        pm.expect(jsonData).to.have.property('message');",
                   "        pm.expect(jsonData).to.have.property('error');",
                   "        pm.expect(jsonData).to.have.property('statusCode');",
+                  "",
+                  "        // Check for specific password validation messages",
+                  "        const message = jsonData.message;",
+                  "        if (message.includes('Password')) {",
+                  "            pm.test(\"Password validation message is descriptive\", function () {",
+                  "                const validMessages = [",
+                  "                    'Password must be at least 8 characters long',",
+                  "                    'Password must not exceed 64 characters',",
+                  "                    'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&)'",
+                  "                ];",
+                  "                pm.expect(validMessages).to.include(message);",
+                  "            });",
+                  "        }",
                   "    });",
                   "}",
                   "",
@@ -74,7 +87,7 @@
               "host": ["{{base_url}}"],
               "path": ["auth", "register"]
             },
-            "description": "Register a new user with email and password"
+            "description": "Register a new user with email and password. Password must be 8-64 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&)."
           }
         },
         {
