@@ -3,6 +3,7 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { AuthController } from './interfaces/http/controllers/auth.controller';
 import { LocalStrategy } from './infrastructure/strategies/local.strategy';
@@ -11,8 +12,9 @@ import { LocalAuthGuard } from './interfaces/http/guards/local-auth.guard';
 import { JwtAuthGuard } from './interfaces/http/guards/jwt-auth.guard';
 import { RegisterUserHandler } from './application/handlers/register-user.handler';
 import { LoginUserHandler } from './application/handlers/login-user.handler';
-import { InMemoryUserRepository } from './infrastructure/persistence/in-memory-user.repository';
 import { USER_REPOSITORY } from './domain/repositories/user.repository.interface';
+import { TypeOrmUserRepository } from './infrastructure/persistence/typeorm/typeorm-user.repository';
+import { UserEntity } from './infrastructure/persistence/typeorm/user.entity';
 
 const commandHandlers = [RegisterUserHandler, LoginUserHandler];
 const strategies = [LocalStrategy, JwtStrategy];
@@ -22,6 +24,7 @@ const guards = [LocalAuthGuard, JwtAuthGuard];
   imports: [
     CqrsModule,
     PassportModule,
+    TypeOrmModule.forFeature([UserEntity]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -38,7 +41,7 @@ const guards = [LocalAuthGuard, JwtAuthGuard];
     ...guards,
     {
       provide: USER_REPOSITORY,
-      useClass: InMemoryUserRepository,
+      useClass: TypeOrmUserRepository,
     },
   ],
   exports: [JwtAuthGuard],
