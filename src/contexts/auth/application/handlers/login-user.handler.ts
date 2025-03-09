@@ -32,7 +32,13 @@ export class LoginUserHandler implements ICommandHandler<LoginUserCommand> {
       throw new UnauthorizedException('Please verify your email address before logging in');
     }
 
-    const payload = { sub: user.id, email: user.email, roles: user.roles };
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      roles: user.roles,
+      isEmailVerified: user.isEmailVerified,
+    };
+
     return {
       access_token: await this.jwtService.signAsync(payload),
     };

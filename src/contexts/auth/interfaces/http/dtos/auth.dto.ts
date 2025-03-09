@@ -1,6 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsString, Matches, MaxLength, MinLength } from 'class-validator';
 
+export interface JwtPayload {
+  sub: string;
+  email: string;
+  roles: string[];
+  isEmailVerified: boolean;
+}
+
 export class AuthCredentialsDto {
   @ApiProperty({ example: 'user@example.com' })
   @IsEmail({}, { message: 'Please provide a valid email address' })
@@ -29,4 +36,18 @@ export class RegisterResponseDto {
 export class LoginResponseDto {
   @ApiProperty({ example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' })
   access_token: string;
+}
+
+export class CurrentUserResponseDto {
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  id: string;
+
+  @ApiProperty({ example: 'user@example.com' })
+  email: string;
+
+  @ApiProperty({ example: ['user'], isArray: true })
+  roles: string[];
+
+  @ApiProperty({ example: true })
+  isEmailVerified: boolean;
 }

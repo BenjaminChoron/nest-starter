@@ -1,16 +1,26 @@
-import { Body, Controller, Post, UseGuards, Type, HttpCode, HttpStatus, Get, Query } from '@nestjs/common';
-import { CommandBus } from '@nestjs/cqrs';
+import { Body, Controller, Post, UseGuards, Type, HttpCode, HttpStatus, Get, Query, Request } from '@nestjs/common';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { RegisterUserCommand } from '../../../application/commands/register-user.command';
 import { LoginUserCommand } from '../../../application/commands/login-user.command';
 import { VerifyEmailCommand } from '../../../application/commands/verify-email.command';
 import { LocalAuthGuard } from '../guards/local-auth.guard';
-import { ApiTags, ApiOkResponse, ApiBody, ApiOperation, ApiQuery } from '@nestjs/swagger';
-import { AuthCredentialsDto, RegisterResponseDto, LoginResponseDto } from '../dtos/auth.dto';
+import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { ApiTags, ApiOkResponse, ApiBody, ApiOperation, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  AuthCredentialsDto,
+  RegisterResponseDto,
+  LoginResponseDto,
+  CurrentUserResponseDto,
+  JwtPayload,
+} from '../dtos/auth.dto';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly commandBus: CommandBus) {}
+  constructor(
+    private readonly commandBus: CommandBus,
+    private readonly queryBus: QueryBus,
+  ) {}
 
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })
@@ -40,5 +50,21 @@ export class AuthController {
   async verifyEmail(@Query('token') token: string): Promise<{ message: string }> {
     await this.commandBus.execute(new VerifyEmailCommand(token));
     return { message: 'Email verified successfully' };
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current user information' })
+  @ApiOkResponse({ type: CurrentUserResponseDto })
+  getCurrentUser(@Request() req: { user: JwtPayload }): CurrentUserResponseDto {
+    const { sub: id, email, roles, isEmailVerified } = req.user;
+
+    return {
+      id,
+      email,
+      roles,
+      isEmailVerified,
+    };
   }
 }

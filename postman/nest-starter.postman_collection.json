@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "1234567-89ab-cdef-0123-456789abcdef",
     "name": "Nest Starter API",
-    "description": "Collection for testing the Nest Starter API endpoints. This collection includes authentication and user management endpoints with comprehensive test cases.\n\nSetup:\n1. Make sure the API is running at {{base_url}}\n2. Set up environment variables\n3. Run the collection in the following order:\n   - Register\n   - Login\n   - Create User\n   - Update User Profile\n   - Get User by ID\n\nPassword Requirements:\n- Length: 8-64 characters\n- Must contain at least one uppercase letter\n- Must contain at least one lowercase letter\n- Must contain at least one number\n- Must contain at least one special character (@$!%*?&)",
+    "description": "Collection for testing the Nest Starter API endpoints. This collection includes authentication and user management endpoints with comprehensive test cases.\n\nSetup:\n1. Make sure the API is running at {{base_url}}\n2. Set up environment variables\n3. Run the collection in the following order:\n   - Register\n   - Verify Email\n   - Login\n   - Get Current User\n   - Create User\n   - Update User Profile\n   - Get User by ID\n\nPassword Requirements:\n- Length: 8-64 characters\n- Must contain at least one uppercase letter\n- Must contain at least one lowercase letter\n- Must contain at least one number\n- Must contain at least one special character (@$!%*?&)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -29,7 +29,7 @@
                   "pm.test(\"Response matches RegisterResponseDto structure\", function () {",
                   "    pm.expect(jsonData).to.be.an('object');",
                   "    pm.expect(jsonData).to.have.property('message');",
-                  "    pm.expect(jsonData.message).to.equal('User registered successfully');",
+                  "    pm.expect(jsonData.message).to.include('Please check your email for verification instructions');",
                   "});",
                   "",
                   "// Test password validation errors",
@@ -91,6 +91,61 @@
           }
         },
         {
+          "name": "Verify Email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Parse response",
+                  "var jsonData = JSON.parse(responseBody);",
+                  "",
+                  "// Test successful verification",
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Validate response structure",
+                  "pm.test(\"Response has correct structure\", function () {",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData.message).to.equal('Email verified successfully');",
+                  "});",
+                  "",
+                  "// Test error cases",
+                  "if (pm.response.code === 400) {",
+                  "    pm.test(\"Bad request error structure\", function () {",
+                  "        pm.expect(jsonData).to.have.property('message');",
+                  "        const validMessages = [",
+                  "            'Invalid verification token',",
+                  "            'Verification token has expired'",
+                  "        ];",
+                  "        pm.expect(validMessages).to.include(jsonData.message);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/auth/verify?token={{verification_token}}",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "verify"],
+              "query": [
+                {
+                  "key": "token",
+                  "value": "{{verification_token}}",
+                  "description": "Email verification token received in email"
+                }
+              ]
+            },
+            "description": "Verify user's email address using the token received in email"
+          }
+        },
+        {
           "name": "Login",
           "event": [
             {
@@ -122,6 +177,7 @@
                   "        pm.expect(payload).to.have.property('sub');",
                   "        pm.expect(payload).to.have.property('email');",
                   "        pm.expect(payload).to.have.property('roles');",
+                  "        pm.expect(payload).to.have.property('isEmailVerified');",
                   "        pm.expect(payload).to.have.property('exp');",
                   "    });",
                   "",
@@ -136,7 +192,11 @@
                   "if (pm.response.code === 401) {",
                   "    pm.test(\"Unauthorized error structure\", function () {",
                   "        pm.expect(jsonData).to.have.property('message');",
-                  "        pm.expect(jsonData.message).to.equal('Invalid credentials');",
+                  "        const validMessages = [",
+                  "            'Invalid credentials',",
+                  "            'Please verify your email address before logging in'",
+                  "        ];",
+                  "        pm.expect(validMessages).to.include(jsonData.message);",
                   "    });",
                   "}"
                 ],
@@ -161,7 +221,66 @@
               "host": ["{{base_url}}"],
               "path": ["auth", "login"]
             },
-            "description": "Login with email and password to receive JWT token"
+            "description": "Login with email and password to receive JWT token. Email must be verified before login is allowed."
+          }
+        },
+        {
+          "name": "Get Current User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Parse response",
+                  "var jsonData = JSON.parse(responseBody);",
+                  "",
+                  "// Test successful retrieval",
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Validate response structure according to CurrentUserResponseDto",
+                  "pm.test(\"Response matches CurrentUserResponseDto structure\", function () {",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData).to.have.property('id').that.matches(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);",
+                  "    pm.expect(jsonData).to.have.property('email').that.matches(/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/);",
+                  "    pm.expect(jsonData).to.have.property('roles').that.is.an('array');",
+                  "    pm.expect(jsonData).to.have.property('isEmailVerified').that.is.a('boolean');",
+                  "});",
+                  "",
+                  "// Test authorization",
+                  "pm.test(\"Authorization header is present\", function () {",
+                  "    pm.expect(pm.request.headers.has('Authorization')).to.be.true;",
+                  "    const authHeader = pm.request.headers.get('Authorization');",
+                  "    pm.expect(authHeader).to.include('Bearer');",
+                  "});",
+                  "",
+                  "// Test error cases",
+                  "if (pm.response.code === 401) {",
+                  "    pm.test(\"Unauthorized error structure\", function () {",
+                  "        pm.expect(jsonData).to.have.property('message');",
+                  "        pm.expect(jsonData.message).to.equal('Unauthorized');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "Get current user information (requires authentication)"
           }
         }
       ]
