@@ -3,7 +3,7 @@
 [![NestJS](https://img.shields.io/badge/NestJS-v11-ea2845.svg)](https://nestjs.com/)
 [![Node](https://img.shields.io/badge/Node-%3E%3D18-brightgreen.svg)](https://nodejs.org)
 [![PNPM](https://img.shields.io/badge/pnpm-latest-orange.svg)](https://pnpm.io/)
-[![Tests](https://github.com/BenjaminChoron/nest-starter/actions/workflows/test.yml/badge.svg)](https://github.com/BenjaminChoron/nest-starter/actions/workflows/test.yml)
+[![CI](https://github.com/BenjaminChoron/nest-starter/actions/workflows/ci.yml/badge.svg)](https://github.com/BenjaminChoron/nest-starter/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-UNLICENSED-red.svg)]()
 
 A modern, well-structured NestJS starter template with best practices and essential tooling pre-configured.
