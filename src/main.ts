@@ -1,19 +1,57 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.useGlobalPipes(new ValidationPipe());
 
   const config = new DocumentBuilder()
     .setTitle('NestJS Starter API')
-    .setDescription('NestJS Starter API with DDD and CQRS')
+    .setDescription(
+      `
+A modern REST API built with NestJS, implementing Domain-Driven Design (DDD) and CQRS patterns.
+
+## Features
+- Authentication with JWT
+- Email verification
+- User management
+- Role-based access control
+- PostgreSQL database
+- Swagger API documentation
+
+## Authentication
+Most endpoints require Bearer token authentication. To get a token:
+1. Register a new user (/auth/register)
+2. Login with credentials (/auth/login)
+3. Use the returned token in the Authorization header
+    `,
+    )
     .setVersion('1.0')
-    .addBearerAuth()
+    .setContact('Benjamin Choron', 'https://benjamin-choron.com', 'contact@benjamin-choron.com')
+    .addServer('http://localhost:3000', 'Local Development')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Enter JWT token',
+        in: 'header',
+      },
+      'JWT-auth',
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  SwaggerModule.setup('api', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true,
+      tagsSorter: 'alpha',
+      operationsSorter: 'alpha',
+    },
+  });
 
   await app.listen(process.env.PORT ?? 3000);
 }
