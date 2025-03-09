@@ -13,6 +13,8 @@ A modern, well-structured NestJS starter template with best practices and essent
 - 🚀 Built with [NestJS](https://nestjs.com/) v11
 - 📦 PNPM for fast, disk-efficient package management
 - 🔒 Authentication ready with JWT and Passport strategies
+- 🛡️ Comprehensive security features with CSRF protection
+- 🔐 Rate limiting and brute force protection
 - 🗃️ PostgreSQL database with TypeORM integration
 - 📝 OpenAPI/Swagger documentation
 - 🏗️ CQRS architecture with domain-driven design
@@ -131,6 +133,41 @@ The authentication system includes:
 - Password hashing with bcrypt
 - Protected routes with Guards
 - Role-based access control
+- CSRF protection for all mutating requests
+- Rate limiting to prevent brute force attacks
+
+### Security Features
+
+The project implements various security measures:
+
+#### CSRF Protection
+
+- Double-submit cookie pattern implementation
+- Automatic CSRF token generation and validation
+- Protected mutations (POST, PUT, DELETE requests)
+- Secure token storage with HTTP-only cookies
+- Token validation middleware
+- Production-ready secure cookie configurations
+
+#### Rate Limiting
+
+- Request rate limiting with ThrottlerModule
+- Customizable limits per endpoint
+- IP-based rate limiting
+- Protection against brute force attacks
+
+#### Additional Security Measures
+
+- Helmet middleware for secure HTTP headers
+- CORS protection with configurable origins
+- Secure session handling
+- HTTP-only cookies for sensitive data
+- Strict content security policy
+- XSS protection headers
+- Secure password hashing with bcrypt
+- Input validation and sanitization
+- Request size limits
+- Secure error handling
 
 ### Code Style
 
@@ -197,6 +234,7 @@ The collection includes:
 
 - Authentication endpoints (register, login)
 - Automatic access token management
+- CSRF token handling and validation
 - Environment variable handling
 - Test scripts for response validation
 
