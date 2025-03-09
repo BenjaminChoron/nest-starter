@@ -20,13 +20,17 @@ concurrency:
 jobs:
   install:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
       - uses: pnpm/action-setup@v3
         name: Install pnpm
         with:
           version: 8
+          run_install: false
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -51,23 +55,32 @@ jobs:
             ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          if [ -f "pnpm-lock.yaml" ]; then
+            pnpm install --frozen-lockfile
+          else
+            pnpm install
+          fi
 
       - name: Cache node_modules
         uses: actions/cache@v4
         with:
-          path: node_modules
+          path: |
+            node_modules
+            */*/node_modules
           key: ${{ runner.os }}-modules-${{ hashFiles('pnpm-lock.yaml') }}
 
   lint:
     needs: install
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
       - uses: pnpm/action-setup@v3
         with:
           version: 8
+          run_install: false
 
       - uses: actions/setup-node@v4
         with:
@@ -77,7 +90,9 @@ jobs:
       - name: Restore node_modules
         uses: actions/cache@v4
         with:
-          path: node_modules
+          path: |
+            node_modules
+            */*/node_modules
           key: ${{ runner.os }}-modules-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Run linting
@@ -86,12 +101,14 @@ jobs:
   test:
     needs: install
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
       - uses: pnpm/action-setup@v3
         with:
           version: 8
+          run_install: false
 
       - uses: actions/setup-node@v4
         with:
@@ -101,7 +118,9 @@ jobs:
       - name: Restore node_modules
         uses: actions/cache@v4
         with:
-          path: node_modules
+          path: |
+            node_modules
+            */*/node_modules
           key: ${{ runner.os }}-modules-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Run tests
@@ -110,6 +129,7 @@ jobs:
   security:
     needs: install
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request' || github.event_name == 'schedule'
     steps:
       - uses: actions/checkout@v4
@@ -117,6 +137,7 @@ jobs:
       - uses: pnpm/action-setup@v3
         with:
           version: 8
+          run_install: false
 
       - uses: actions/setup-node@v4
         with:
@@ -126,7 +147,9 @@ jobs:
       - name: Restore node_modules
         uses: actions/cache@v4
         with:
-          path: node_modules
+          path: |
+            node_modules
+            */*/node_modules
           key: ${{ runner.os }}-modules-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Run Snyk to check for vulnerabilities
