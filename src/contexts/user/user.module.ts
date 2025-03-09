@@ -1,7 +1,10 @@
 import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { MulterModule } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { AuthModule } from '../auth/auth.module';
+import { SharedModule } from '../shared/shared.module';
 import { UserEntity } from './infrastructure/persistence/typeorm/user.entity';
 import { TypeOrmUserRepository } from './infrastructure/persistence/typeorm/typeorm-user.repository';
 import { CreateUserHandler } from './application/commands/handlers/create-user.handler';
@@ -17,7 +20,24 @@ const QueryHandlers = [GetUserByIdHandler, GetAllUsersHandler];
 const Sagas = [UserRegistrationSaga];
 
 @Module({
-  imports: [CqrsModule, TypeOrmModule.forFeature([UserEntity]), AuthModule],
+  imports: [
+    CqrsModule,
+    TypeOrmModule.forFeature([UserEntity]),
+    AuthModule,
+    SharedModule,
+    MulterModule.register({
+      storage: memoryStorage(),
+      limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB
+      },
+      fileFilter: (req, file, cb) => {
+        if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
+          return cb(new Error('Only image files are allowed!'), false);
+        }
+        cb(null, true);
+      },
+    }),
+  ],
   controllers: [UserController],
   providers: [
     ...CommandHandlers,

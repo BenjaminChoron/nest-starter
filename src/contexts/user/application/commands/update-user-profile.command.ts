@@ -9,6 +9,7 @@ export class UpdateUserProfileCommand {
     public readonly profilePicture?: string,
     phone?: string,
     address?: string,
+    public readonly file?: Express.Multer.File,
   ) {
     this.phone = phone ? Phone.create(phone) : undefined;
     this.address = address ? Address.create(address) : undefined;

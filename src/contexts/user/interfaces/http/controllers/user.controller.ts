@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import {
   ApiTags,
@@ -10,7 +10,10 @@ import {
   ApiBadRequestResponse,
   ApiUnauthorizedResponse,
   ApiNotFoundResponse,
+  ApiConsumes,
+  ApiBody,
 } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from 'src/contexts/auth/interfaces/http/guards/jwt-auth.guard';
 import { CustomThrottlerGuard } from '../../../../shared/infrastructure/guards/throttler.guard';
 import { AdminGuard } from '../../../../shared/infrastructure/guards/admin.guard';
@@ -22,6 +25,7 @@ import { User } from '../../../domain/user.entity';
 import { CreateUserDto } from '../dtos/create-user.dto';
 import { UpdateUserProfileDto } from '../dtos/update-user-profile.dto';
 import { UserResponseDto } from '../dtos/user-response.dto';
+import { CloudinaryService } from '../../../../shared/infrastructure/services/cloudinary.service';
 
 @ApiTags('Users')
 @Controller('users')
@@ -29,6 +33,7 @@ export class UserController {
   constructor(
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   @UseGuards(CustomThrottlerGuard)
@@ -149,5 +154,60 @@ export class UserController {
       phone: user.phone,
       address: user.address,
     }));
+  }
+
+  @UseGuards(CustomThrottlerGuard, JwtAuthGuard)
+  @Put(':id/profile-picture')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Upload user profile picture',
+    description: 'Uploads and updates the profile picture for a specific user.',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Profile picture file (jpg, jpeg, png, gif)',
+        },
+      },
+    },
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'User ID (UUID)',
+    required: true,
+    type: 'string',
+  })
+  @ApiOkResponse({
+    type: UserResponseDto,
+    description: 'Profile picture updated successfully',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Invalid or expired JWT token',
+  })
+  @ApiNotFoundResponse({
+    description: 'User not found',
+  })
+  async uploadProfilePicture(@Param('id') id: string, @UploadedFile() file: Express.Multer.File): Promise<void> {
+    // Get current user to check if they have a profile picture to delete
+    const query = new GetUserByIdQuery(id);
+    const user = await this.queryBus.execute<GetUserByIdQuery, User>(query);
+
+    // Update user profile with new picture
+    const command = new UpdateUserProfileCommand(
+      id,
+      user.firstName,
+      user.lastName,
+      undefined,
+      user.phone,
+      user.address,
+      file,
+    );
+    await this.commandBus.execute(command);
   }
 }

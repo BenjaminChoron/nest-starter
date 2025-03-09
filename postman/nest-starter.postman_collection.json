@@ -555,6 +555,91 @@
             },
             "description": "Get all user profiles (requires admin role)"
           }
+        },
+        {
+          "name": "Upload Profile Picture",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Add CSRF token to request if available",
+                  "if (pm.environment.get('csrf_token')) {",
+                  "    pm.request.headers.add({",
+                  "        key: 'x-csrf-token',",
+                  "        value: pm.environment.get('csrf_token')",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test successful upload",
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test error cases",
+                  "if (pm.response.code === 401) {",
+                  "    pm.test(\"Unauthorized error structure\", function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData).to.have.property('message');",
+                  "        pm.expect(jsonData.message).to.equal('Unauthorized');",
+                  "    });",
+                  "}",
+                  "",
+                  "if (pm.response.code === 400) {",
+                  "    pm.test(\"Bad request error structure\", function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData).to.have.property('message');",
+                  "        pm.expect(jsonData.message).to.be.oneOf([",
+                  "            'Only image files are allowed!',",
+                  "            'File size too large'",
+                  "        ]);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/path/to/image.jpg",
+                  "description": "Profile picture file (jpg, jpeg, png, gif)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/users/:id/profile-picture",
+              "host": ["{{base_url}}"],
+              "path": ["users", ":id", "profile-picture"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{user_id}}",
+                  "description": "User ID"
+                }
+              ]
+            },
+            "description": "Upload and update user profile picture (requires authentication). Supports jpg, jpeg, png, and gif formats. Maximum file size is 5MB."
+          }
         }
       ]
     }
