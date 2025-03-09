@@ -1,6 +1,7 @@
 import { DataSource } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { getDatabaseConfig } from '../src/config/database.config';
+import { log } from './utils/log';
 
 const configService = new ConfigService();
 
@@ -8,17 +9,6 @@ const dataSource = new DataSource({
   ...getDatabaseConfig(configService),
   synchronize: false, // Override synchronize for safety during reset
 });
-
-const log = {
-  info: (message: string) => console.log(`ℹ️  ${message}`),
-  success: (message: string) => console.log(`✨ ${message}`),
-  warning: (message: string) => console.log(`⚠️  ${message}`),
-  error: (message: string, error?: unknown) => console.error(`❌ ${message}`, error || ''),
-  step: (step: number, total: number, message: string) => {
-    console.log(`\n[${step}/${total}] 🔄 ${message}...`);
-  },
-  divider: () => console.log('\n----------------------------------------\n'),
-};
 
 async function resetDatabase(): Promise<void> {
   console.log('\n🔄 DATABASE RESET SCRIPT\n');
