@@ -3,6 +3,7 @@
 [![NestJS](https://img.shields.io/badge/NestJS-v11-ea2845.svg)](https://nestjs.com/)
 [![Node](https://img.shields.io/badge/Node-%3E%3D18-brightgreen.svg)](https://nodejs.org)
 [![PNPM](https://img.shields.io/badge/pnpm-latest-orange.svg)](https://pnpm.io/)
+[![Tests](https://github.com/USERNAME/nest-starter/actions/workflows/test.yml/badge.svg)](https://github.com/USERNAME/nest-starter/actions/workflows/test.yml)
 [![License](https://img.shields.io/badge/license-UNLICENSED-red.svg)]()
 
 A modern, well-structured NestJS starter template with best practices and essential tooling pre-configured.
@@ -23,6 +24,7 @@ A modern, well-structured NestJS starter template with best practices and essent
 - 🐳 Docker Compose for local development
 - 📧 Email integration with SendGrid
 - 🔐 Secure password hashing with bcrypt
+- 🔄 Continuous Integration with GitHub Actions
 
 ## Prerequisites
 
@@ -150,6 +152,32 @@ Tests are written using Jest. The configuration can be found in:
 
 - `jest` section in `package.json` for unit tests
 - `test/jest-e2e.json` for end-to-end tests
+
+Tests are automatically run on every push and pull request through GitHub Actions. You can view the test results in the Actions tab of the repository.
+
+The CI pipeline:
+
+- Runs on Ubuntu latest with Node.js 20.x
+- Uses PNPM for efficient dependency management
+- Caches dependencies for faster builds
+- Executes all unit tests
+- Reports test results in the GitHub UI
+
+You can run tests locally using:
+
+```bash
+# Run unit tests
+pnpm test
+
+# Run tests in watch mode
+pnpm test:watch
+
+# Run tests with coverage
+pnpm test:cov
+
+# Run end-to-end tests
+pnpm test:e2e
+```
 
 ### API Testing with Postman
 
