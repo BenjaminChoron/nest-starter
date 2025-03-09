@@ -5,9 +5,13 @@ import { ValidationPipe } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
 import { GlobalExceptionFilter } from './contexts/shared/infrastructure/exceptions/global-exception.filter';
 import { ConfigService } from '@nestjs/config';
+import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Security middleware
+  app.use(helmet());
 
   // Global validation pipe
   app.useGlobalPipes(new ValidationPipe());

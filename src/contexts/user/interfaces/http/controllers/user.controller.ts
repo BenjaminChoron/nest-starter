@@ -12,6 +12,7 @@ import {
   ApiNotFoundResponse,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/contexts/auth/interfaces/http/guards/jwt-auth.guard';
+import { CustomThrottlerGuard } from '../../../../shared/infrastructure/guards/throttler.guard';
 import { CreateUserCommand } from '../../../application/commands/create-user.command';
 import { UpdateUserProfileCommand } from '../../../application/commands/update-user-profile.command';
 import { GetUserByIdQuery } from '../../../application/queries/get-user-by-id.query';
@@ -28,6 +29,7 @@ export class UserController {
     private readonly queryBus: QueryBus,
   ) {}
 
+  @UseGuards(CustomThrottlerGuard)
   @Post()
   @ApiOperation({
     summary: 'Create a new user',
@@ -47,8 +49,8 @@ export class UserController {
     await this.commandBus.execute(command);
   }
 
+  @UseGuards(CustomThrottlerGuard, JwtAuthGuard)
   @Put(':id')
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Update user profile',
@@ -80,8 +82,8 @@ export class UserController {
     await this.commandBus.execute(command);
   }
 
+  @UseGuards(CustomThrottlerGuard, JwtAuthGuard)
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Get user by ID',

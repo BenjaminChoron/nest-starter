@@ -5,6 +5,7 @@ import { LoginUserCommand } from '../../../application/commands/login-user.comma
 import { VerifyEmailCommand } from '../../../application/commands/verify-email.command';
 import { LocalAuthGuard } from '../guards/local-auth.guard';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { CustomThrottlerGuard } from '../../../../shared/infrastructure/guards/throttler.guard';
 import {
   ApiTags,
   ApiOkResponse,
@@ -32,6 +33,7 @@ export class AuthController {
     private readonly queryBus: QueryBus,
   ) {}
 
+  @UseGuards(CustomThrottlerGuard)
   @Post('register')
   @ApiOperation({
     summary: 'Register a new user',
@@ -50,7 +52,7 @@ export class AuthController {
     return { message: 'User registered successfully. Please check your email for verification instructions.' };
   }
 
-  @UseGuards(LocalAuthGuard as Type<LocalAuthGuard>)
+  @UseGuards(CustomThrottlerGuard, LocalAuthGuard as Type<LocalAuthGuard>)
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -71,6 +73,7 @@ export class AuthController {
     );
   }
 
+  @UseGuards(CustomThrottlerGuard)
   @Get('verify')
   @ApiOperation({
     summary: 'Verify email address',

@@ -5,12 +5,19 @@ import { AuthModule } from './contexts/auth/auth.module';
 import { UserModule } from './contexts/user/user.module';
 import { SharedModule } from './contexts/shared/shared.module';
 import { getTypeOrmConfig } from './config/typeorm.config';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000, // 1 minute
+        limit: 10, // 10 requests per minute
+      },
+    ]),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: getTypeOrmConfig,
