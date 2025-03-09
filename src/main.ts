@@ -2,10 +2,20 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
+import { HttpAdapterHost } from '@nestjs/core';
+import { GlobalExceptionFilter } from './contexts/shared/infrastructure/exceptions/global-exception.filter';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Global validation pipe
   app.useGlobalPipes(new ValidationPipe());
+
+  // Global exception filter
+  const httpAdapter = app.get(HttpAdapterHost);
+  const configService = app.get(ConfigService);
+  app.useGlobalFilters(new GlobalExceptionFilter(httpAdapter, configService));
 
   const config = new DocumentBuilder()
     .setTitle('NestJS Starter API')
@@ -55,4 +65,8 @@ Most endpoints require Bearer token authentication. To get a token:
 
   await app.listen(process.env.PORT ?? 3000);
 }
-void bootstrap();
+
+void bootstrap().catch((error) => {
+  console.error('Application failed to start:', error);
+  process.exit(1);
+});

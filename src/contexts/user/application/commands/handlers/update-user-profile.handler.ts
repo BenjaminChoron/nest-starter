@@ -2,7 +2,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { Inject } from '@nestjs/common';
 import { UpdateUserProfileCommand } from '../update-user-profile.command';
 import { UserRepository, USER_REPOSITORY } from '../../../domain/user.repository';
-import { UserNotFoundException } from '../../../../../common/exceptions/user-not-found.exception';
+import { UserNotFoundException } from '../../../../shared/application/exceptions/user-not-found.exception';
 
 @CommandHandler(UpdateUserProfileCommand)
 export class UpdateUserProfileHandler implements ICommandHandler<UpdateUserProfileCommand> {

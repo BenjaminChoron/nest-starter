@@ -5,7 +5,7 @@ import { User } from '../../domain/entities/user.entity';
 import { Inject } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { UserRegisteredEvent } from '../../domain/events/user-registered.event';
-import { UserAlreadyExistsException } from 'src/common/exceptions/user-already-exists.exception';
+import { UserAlreadyExistsException } from 'src/contexts/shared/application/exceptions/user-already-exists.exception';
 import { Email } from '../../domain/value-objects/email.value-object';
 import { Password } from '../../domain/value-objects/password.value-object';
 

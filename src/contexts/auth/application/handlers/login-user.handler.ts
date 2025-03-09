@@ -3,7 +3,7 @@ import { LoginUserCommand } from '../commands/login-user.command';
 import { IUserRepository, USER_REPOSITORY } from '../../domain/repositories/user.repository.interface';
 import { Inject, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { InvalidCredentialsException } from '../../../../common/exceptions/invalid-credentials.exception';
+import { InvalidCredentialsException } from '../../../shared/application/exceptions/invalid-credentials.exception';
 import { Email } from '../../domain/value-objects/email.value-object';
 
 @CommandHandler(LoginUserCommand)

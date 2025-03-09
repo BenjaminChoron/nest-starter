@@ -3,7 +3,7 @@ import { EventBus } from '@nestjs/cqrs';
 import { RegisterUserHandler } from './register-user.handler';
 import { RegisterUserCommand } from '../commands/register-user.command';
 import { IUserRepository, USER_REPOSITORY } from '../../domain/repositories/user.repository.interface';
-import { UserAlreadyExistsException } from '../../../../common/exceptions/user-already-exists.exception';
+import { UserAlreadyExistsException } from '../../../shared/application/exceptions/user-already-exists.exception';
 import { Email } from '../../domain/value-objects/email.value-object';
 import { User } from '../../domain/entities/user.entity';
 

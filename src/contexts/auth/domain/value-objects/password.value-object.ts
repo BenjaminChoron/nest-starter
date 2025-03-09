@@ -1,5 +1,5 @@
 import * as bcrypt from 'bcrypt';
-import { InvalidPasswordException } from '../../../../common/exceptions/invalid-password.exception';
+import { InvalidPasswordException } from '../../../shared/application/exceptions/invalid-password.exception';
 
 export class Password {
   private readonly value: string;
