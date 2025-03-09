@@ -27,12 +27,15 @@ A modern, well-structured NestJS starter template with best practices and essent
 - 📧 Email integration with SendGrid
 - 🔐 Secure password hashing with bcrypt
 - 🔄 Continuous Integration with GitHub Actions
+- 🖼️ File uploads with Cloudinary integration
+- 🎨 Profile picture management with image optimization
 
 ## Prerequisites
 
 - Node.js (v18 or higher recommended)
 - PNPM package manager
 - Docker and Docker Compose (for local database)
+- Cloudinary account (for file uploads)
 
 ## Getting Started
 
@@ -55,13 +58,20 @@ pnpm install
 cp .env.example .env
 ```
 
-4. Start the database:
+4. Configure your environment variables in `.env`:
+
+   - Database settings
+   - JWT secret
+   - SendGrid credentials
+   - Cloudinary credentials (get these from your Cloudinary dashboard)
+
+5. Start the database:
 
 ```bash
 docker-compose up -d
 ```
 
-5. Start the development server:
+6. Start the development server:
 
 ```bash
 pnpm start:dev
@@ -100,6 +110,45 @@ test/                # Test files
 ```
 
 ## Development
+
+### Configuration
+
+The project uses environment variables for configuration. Required variables include:
+
+#### Database Configuration
+
+- `DB_HOST` - Database host
+- `DB_PORT` - Database port
+- `DB_USERNAME` - Database username
+- `DB_PASSWORD` - Database password
+- `DB_DATABASE` - Database name
+
+#### JWT Configuration
+
+- `JWT_SECRET` - Secret key for JWT tokens
+
+#### SendGrid Configuration
+
+- `SENDGRID_API_KEY` - SendGrid API key
+- `SENDGRID_FROM_EMAIL` - Verified sender email
+
+#### Cloudinary Configuration
+
+- `CLOUDINARY_CLOUD_NAME` - Your Cloudinary cloud name
+- `CLOUDINARY_API_KEY` - Your Cloudinary API key
+- `CLOUDINARY_API_SECRET` - Your Cloudinary API secret
+
+### File Upload Features
+
+The project includes a complete file upload system using Cloudinary:
+
+- Secure file uploads with size and type validation
+- Image optimization and transformation
+- Automatic cleanup of old files
+- Support for common image formats (jpg, jpeg, png, gif)
+- File size limit of 5MB
+- Automatic image resizing and optimization
+- Profile picture management for users
 
 ### Database Setup
 
