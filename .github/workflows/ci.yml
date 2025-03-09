@@ -187,7 +187,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-            - name: Create reports directory
+      - name: Create reports directory
         run: mkdir -p reports
 
       - name: Run Snyk to check for vulnerabilities
