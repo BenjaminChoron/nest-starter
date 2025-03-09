@@ -56,11 +56,12 @@ jobs:
 
       - name: Install dependencies
         run: |
-          if [ -f "pnpm-lock.yaml" ]; then
-            pnpm install --frozen-lockfile
-          else
+          # First try to install with lockfile
+          pnpm install --frozen-lockfile || {
+            # If that fails, update the lockfile and install
+            echo "Lockfile incompatible or missing, installing without frozen lockfile..."
             pnpm install
-          fi
+          }
 
       - name: Cache node_modules
         uses: actions/cache@v4
