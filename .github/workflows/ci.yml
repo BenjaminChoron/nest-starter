@@ -196,7 +196,7 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: --severity-threshold=medium --sarif-file-output=reports/snyk.sarif
+          args: --severity-threshold=medium --json-file-output=reports/snyk.json
 
       - name: Run Snyk Code test
         uses: snyk/actions/node@master
@@ -204,23 +204,33 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: --code --sarif-file-output=reports/snyk-code.sarif
+          command: code test
+          args: --json-file-output=reports/snyk-code.json
 
-      - name: Upload dependency scanning results
-        if: hashFiles('reports/snyk.sarif') != ''
-        uses: github/codeql-action/upload-sarif@v3
-        continue-on-error: true
-        with:
-          sarif_file: reports/snyk.sarif
-          category: Snyk-Dependencies
+      - name: Process Snyk results
+        if: always()
+        run: |
+          echo "### Dependency Scan Results" >> $GITHUB_STEP_SUMMARY
+          if [ -f "reports/snyk.json" ]; then
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            jq -r '.vulnerabilities[] | "- " + .title + " (Severity: " + .severity + ")"' reports/snyk.json >> $GITHUB_STEP_SUMMARY || echo "No vulnerabilities found"
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          fi
 
-      - name: Upload code scanning results
-        if: hashFiles('reports/snyk-code.sarif') != ''
-        uses: github/codeql-action/upload-sarif@v3
-        continue-on-error: true
+          echo "### Code Scan Results" >> $GITHUB_STEP_SUMMARY
+          if [ -f "reports/snyk-code.json" ]; then
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            jq -r '.runs[].results[] | "- " + .message.text' reports/snyk-code.json >> $GITHUB_STEP_SUMMARY || echo "No code issues found"
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload scan results
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          sarif_file: reports/snyk-code.sarif
-          category: Snyk-Code
+          name: security-scan-results
+          path: reports/
+          retention-days: 5
 
       - name: Monitor project in Snyk
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
