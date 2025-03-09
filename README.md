@@ -11,19 +11,24 @@ A modern, well-structured NestJS starter template with best practices and essent
 
 - 🚀 Built with [NestJS](https://nestjs.com/) v11
 - 📦 PNPM for fast, disk-efficient package management
-- 🔒 Authentication ready with JWT and Passport
+- 🔒 Authentication ready with JWT and Passport strategies
+- 🗃️ PostgreSQL database with TypeORM integration
 - 📝 OpenAPI/Swagger documentation
-- 🏗️ CQRS architecture support
+- 🏗️ CQRS architecture with domain-driven design
 - ✨ ESLint + Prettier for code quality
 - 🧪 Jest for testing
-- 🪝 Git hooks with Husky
+- 🪝 Git hooks with Husky and lint-staged
 - 📋 Conventional commits with commitlint
 - 🔄 Hot reload in development
+- 🐳 Docker Compose for local development
+- 📧 Email integration with SendGrid
+- 🔐 Secure password hashing with bcrypt
 
 ## Prerequisites
 
 - Node.js (v18 or higher recommended)
 - PNPM package manager
+- Docker and Docker Compose (for local database)
 
 ## Getting Started
 
@@ -46,7 +51,13 @@ pnpm install
 cp .env.example .env
 ```
 
-4. Start the development server:
+4. Start the database:
+
+```bash
+docker-compose up -d
+```
+
+5. Start the development server:
 
 ```bash
 pnpm start:dev
@@ -72,7 +83,12 @@ The application will be available at `http://localhost:3000`.
 
 ```
 src/
-├── contexts/         # Business logic organized by domain contexts
+├── contexts/           # Business logic organized by domain contexts
+│   ├── auth/          # Authentication and authorization
+│   ├── user/          # User management
+│   └── shared/        # Shared modules and utilities
+├── common/            # Common utilities and helpers
+├── config/           # Application configuration
 ├── app.module.ts     # Root application module
 └── main.ts          # Application entry point
 
@@ -80,6 +96,39 @@ test/                # Test files
 ```
 
 ## Development
+
+### Database Setup
+
+The project uses PostgreSQL as its database. A Docker Compose configuration is included for local development:
+
+```bash
+# Start the database
+docker-compose up -d
+
+# Stop the database
+docker-compose down
+
+# Stop the database and remove data
+docker-compose down -v
+```
+
+Default database configuration:
+
+- Host: localhost
+- Port: 5432
+- Database: nest_db
+- Username: postgres
+- Password: postgres
+
+### Authentication
+
+The authentication system includes:
+
+- JWT-based authentication
+- Local strategy for username/password login
+- Password hashing with bcrypt
+- Protected routes with Guards
+- Role-based access control
 
 ### Code Style
 
