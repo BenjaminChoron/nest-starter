@@ -255,6 +255,34 @@ The Swagger UI provides:
 - Models and DTOs documentation
 - API endpoint examples
 
+## Security Scanning
+
+This project uses Snyk for security scanning. To enable security scanning in your fork:
+
+1. Sign up for a free account at [Snyk.io](https://snyk.io)
+2. Get your Snyk API token from Account Settings
+3. Add the token as a repository secret in GitHub:
+   - Go to your repository Settings
+   - Navigate to Secrets and Variables > Actions
+   - Create a new secret named `SNYK_TOKEN`
+   - Paste your Snyk API token as the value
+
+The security workflow will:
+
+- Scan dependencies for vulnerabilities
+- Perform static code analysis
+- Run weekly security checks
+- Monitor your project for new vulnerabilities
+- Show results in GitHub's Security tab
+
+To run security checks locally:
+
+```bash
+pnpm run security:check  # Run vulnerability and code tests
+pnpm run snyk:test      # Check for vulnerabilities
+pnpm run snyk:monitor   # Monitor project in Snyk dashboard
+```
+
 ## License
 
 [UNLICENSED]

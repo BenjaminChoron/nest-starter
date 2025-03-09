@@ -1,0 +1,86 @@
+# Security scanning workflow using Snyk
+# To use this workflow:
+# 1. Sign up for a Snyk account at https://snyk.io
+# 2. Get your Snyk API token from Account Settings
+# 3. Add SNYK_TOKEN as a repository secret in GitHub
+# 4. Optionally set your organization name in the monitor step
+
+name: Snyk Security Check
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 0 * * 0' # Run weekly on Sundays
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          run_install: false
+
+      - name: Install dependencies
+        run: pnpm install
+
+      # Scan dependencies for vulnerabilities
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/node@master
+        continue-on-error: true # Don't fail the workflow if vulnerabilities are found
+        env:
+          # Required: Create a secret named SNYK_TOKEN with your Snyk API token
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=medium --sarif-file-output=snyk.sarif
+
+      # Scan source code for security issues
+      - name: Run Snyk Code test
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --code --sarif-file-output=snyk-code.sarif
+
+      # Upload results to GitHub Security tab
+      - name: Upload dependency scanning results to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        if: always() # This ensures the SARIF files are uploaded even if previous steps fail
+        with:
+          sarif_file: snyk.sarif
+
+      - name: Upload code scanning results to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: snyk-code.sarif
+
+      # Monitor project in Snyk dashboard (only on push to main)
+      - name: Monitor project in Snyk
+        uses: snyk/actions/node@master
+        if: github.event_name == 'push'
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          command: monitor
+          # Optional: Specify your Snyk organization name here
+          # args: --org=YOUR_ORG_NAME
+          args: monitor
