@@ -4,17 +4,14 @@ import { Repository } from 'typeorm';
 import { TypeOrmUserRepository } from './typeorm-user.repository';
 import { UserEntity } from './user.entity';
 import { User } from '../../../domain/user.entity';
+import { Email } from '../../../domain/value-objects/email.value-object';
 
 describe('TypeOrmUserRepository', () => {
   let repository: TypeOrmUserRepository;
   let typeormRepository: jest.Mocked<Repository<UserEntity>>;
 
-  const mockUser = {
-    id: 'test-id',
-    email: 'test@example.com',
-    firstName: 'John',
-    lastName: 'Doe',
-  } as User;
+  const mockEmail = Email.create('test@example.com');
+  const mockUser = new User('test-id', mockEmail, 'John', 'lastName');
 
   const mockUserEntity = {
     id: 'test-id',
@@ -70,8 +67,9 @@ describe('TypeOrmUserRepository', () => {
   describe('findByEmail', () => {
     it('should return a user when found', async () => {
       const findOne = jest.spyOn(typeormRepository, 'findOne').mockResolvedValue(mockUserEntity);
+      const emailVO = Email.create('test@example.com');
 
-      const result = await repository.findByEmail('test@example.com');
+      const result = await repository.findByEmail(emailVO);
 
       expect(findOne).toHaveBeenCalledWith({ where: { email: 'test@example.com' } });
       expect(result).toEqual(mockUser);
@@ -79,8 +77,9 @@ describe('TypeOrmUserRepository', () => {
 
     it('should return null when user is not found', async () => {
       const findOne = jest.spyOn(typeormRepository, 'findOne').mockResolvedValue(null);
+      const emailVO = Email.create('non-existent@example.com');
 
-      const result = await repository.findByEmail('non-existent@example.com');
+      const result = await repository.findByEmail(emailVO);
 
       expect(findOne).toHaveBeenCalledWith({ where: { email: 'non-existent@example.com' } });
       expect(result).toBeNull();
