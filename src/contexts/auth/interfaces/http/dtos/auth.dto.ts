@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEmail, IsString, Matches, MaxLength, MinLength } from 'class-validator';
 
 export interface JwtPayload {
@@ -50,4 +50,19 @@ export class CurrentUserResponseDto {
 
   @ApiProperty({ example: true })
   isEmailVerified: boolean;
+
+  @ApiProperty({ example: 'John' })
+  firstName: string;
+
+  @ApiProperty({ example: 'Doe' })
+  lastName: string;
+
+  @ApiPropertyOptional({ example: 'https://example.com/profile.jpg' })
+  profilePicture?: string;
+
+  @ApiPropertyOptional({ example: '+1234567890' })
+  phone?: string;
+
+  @ApiPropertyOptional({ example: '123 Main St, City, Country' })
+  address?: string;
 }

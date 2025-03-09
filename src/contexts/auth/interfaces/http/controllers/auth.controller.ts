@@ -6,6 +6,8 @@ import { VerifyEmailCommand } from '../../../application/commands/verify-email.c
 import { LocalAuthGuard } from '../guards/local-auth.guard';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { CustomThrottlerGuard } from '../../../../shared/infrastructure/guards/throttler.guard';
+import { GetUserByIdQuery } from '../../../../user/application/queries/get-user-by-id.query';
+import { User } from '../../../../user/domain/user.entity';
 import {
   ApiTags,
   ApiOkResponse,
@@ -112,7 +114,7 @@ export class AuthController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Get current user profile',
-    description: 'Retrieves the profile information of the currently authenticated user.',
+    description: 'Retrieves the complete profile information of the currently authenticated user.',
   })
   @ApiOkResponse({
     type: CurrentUserResponseDto,
@@ -121,14 +123,23 @@ export class AuthController {
   @ApiUnauthorizedResponse({
     description: 'Invalid or expired JWT token',
   })
-  getCurrentUser(@Request() req: { user: JwtPayload }): CurrentUserResponseDto {
+  async getCurrentUser(@Request() req: { user: JwtPayload }): Promise<CurrentUserResponseDto> {
     const { sub: id, email, roles, isEmailVerified } = req.user;
+
+    // Fetch complete user details
+    const query = new GetUserByIdQuery(id);
+    const userDetails = await this.queryBus.execute<GetUserByIdQuery, User>(query);
 
     return {
       id,
       email,
       roles,
       isEmailVerified,
+      firstName: userDetails.firstName,
+      lastName: userDetails.lastName,
+      profilePicture: userDetails.profilePicture,
+      phone: userDetails.phone,
+      address: userDetails.address,
     };
   }
 }
