@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './contexts/auth/auth.module';
@@ -6,6 +6,11 @@ import { UserModule } from './contexts/user/user.module';
 import { SharedModule } from './contexts/shared/shared.module';
 import { getTypeOrmConfig } from './config/typeorm.config';
 import { ThrottlerModule } from '@nestjs/throttler';
+import {
+  CsrfProtectionMiddleware,
+  CsrfTokenMiddleware,
+} from './contexts/shared/infrastructure/middleware/csrf.middleware';
+import * as cookieParser from 'cookie-parser';
 
 @Module({
   imports: [
@@ -28,4 +33,8 @@ import { ThrottlerModule } from '@nestjs/throttler';
     UserModule,
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(cookieParser(), CsrfTokenMiddleware, CsrfProtectionMiddleware).forRoutes('*');
+  }
+}
