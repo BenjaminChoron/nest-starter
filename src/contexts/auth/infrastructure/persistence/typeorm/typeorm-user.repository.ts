@@ -16,14 +16,20 @@ export class TypeOrmUserRepository implements IUserRepository {
 
   async findById(id: string): Promise<User | null> {
     const userEntity = await this.userRepository.findOne({ where: { id } });
-    return userEntity ? userEntity.toDomain() : null;
+    if (!userEntity) {
+      return null;
+    }
+    return userEntity.toDomain();
   }
 
   async findByEmail(email: Email): Promise<User | null> {
     const userEntity = await this.userRepository.findOne({
       where: { email: email.toString() },
     });
-    return userEntity ? userEntity.toDomain() : null;
+    if (!userEntity) {
+      return null;
+    }
+    return userEntity.toDomain();
   }
 
   async save(user: User): Promise<void> {
@@ -32,14 +38,17 @@ export class TypeOrmUserRepository implements IUserRepository {
   }
 
   async findByVerificationToken(token: string): Promise<User | null> {
-    const entity = await this.userRepository.findOne({
+    const userEntity = await this.userRepository.findOne({
       where: { verificationToken: token },
     });
-
-    if (!entity) {
+    if (!userEntity) {
       return null;
     }
+    return userEntity.toDomain();
+  }
 
-    return entity.toDomain();
+  async findAll(): Promise<User[]> {
+    const userEntities = await this.userRepository.find();
+    return Promise.all(userEntities.map((entity) => entity.toDomain()));
   }
 }

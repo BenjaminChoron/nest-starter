@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "1234567-89ab-cdef-0123-456789abcdef",
     "name": "Nest Starter API",
-    "description": "Collection for testing the Nest Starter API endpoints. This collection includes authentication and user management endpoints with comprehensive test cases.\n\nSetup:\n1. Make sure the API is running at {{base_url}}\n2. Set up environment variables\n3. Run the collection in the following order:\n   - Get CSRF Token\n   - Register\n   - Verify Email\n   - Login\n   - Get Current User\n   - Create User\n   - Update User Profile\n   - Get User by ID\n\nPassword Requirements:\n- Length: 8-64 characters\n- Must contain at least one uppercase letter\n- Must contain at least one lowercase letter\n- Must contain at least one number\n- Must contain at least one special character (@$!%*?&)\n\nCSRF Protection:\n- All mutating requests (POST, PUT, DELETE) require a CSRF token\n- Token is automatically obtained from GET requests\n- Token must be included in the x-csrf-token header",
+    "description": "Collection for testing the Nest Starter API endpoints. This collection includes authentication and user management endpoints with comprehensive test cases.\n\nSetup:\n1. Make sure the API is running at {{base_url}}\n2. Set up environment variables\n3. Run the collection in the following order:\n   - Get CSRF Token\n   - Register\n   - Verify Email\n   - Login\n   - Get Current User\n   - Create User\n   - Update User Profile\n   - Get User by ID\n   - Get All Users (Admin only)\n\nPassword Requirements:\n- Length: 8-64 characters\n- Must contain at least one uppercase letter\n- Must contain at least one lowercase letter\n- Must contain at least one number\n- Must contain at least one special character (@$!%*?&)\n\nCSRF Protection:\n- All mutating requests (POST, PUT, DELETE) require a CSRF token\n- Token is automatically obtained from GET requests\n- Token must be included in the x-csrf-token header",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -485,6 +485,75 @@
               ]
             },
             "description": "Get user profile by ID (requires authentication)"
+          }
+        },
+        {
+          "name": "Get All Users",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Parse response",
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "// Test successful retrieval",
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Save CSRF token if present in response headers",
+                  "const csrfToken = pm.response.headers.get('x-csrf-token');",
+                  "if (csrfToken) {",
+                  "    pm.environment.set('csrf_token', csrfToken);",
+                  "    console.log('CSRF token saved from response');",
+                  "}",
+                  "",
+                  "// Validate response structure",
+                  "pm.test(\"Response is an array of users\", function () {",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "    if (jsonData.length > 0) {",
+                  "        const user = jsonData[0];",
+                  "        pm.expect(user).to.have.property('id').that.matches(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);",
+                  "        pm.expect(user).to.have.property('email').that.matches(/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/);",
+                  "        pm.expect(user).to.have.property('firstName').that.is.a('string');",
+                  "        pm.expect(user).to.have.property('lastName').that.is.a('string');",
+                  "    }",
+                  "});",
+                  "",
+                  "// Test authorization",
+                  "pm.test(\"Authorization header is present and valid\", function () {",
+                  "    pm.expect(pm.request.headers.has('Authorization')).to.be.true;",
+                  "    const authHeader = pm.request.headers.get('Authorization');",
+                  "    pm.expect(authHeader).to.include('Bearer');",
+                  "});",
+                  "",
+                  "// Test error cases",
+                  "if (pm.response.code === 401) {",
+                  "    pm.test(\"Unauthorized error structure\", function () {",
+                  "        pm.expect(jsonData).to.have.property('message');",
+                  "        pm.expect(jsonData.message).to.be.oneOf(['Unauthorized', 'Admin access required']);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users",
+              "host": ["{{base_url}}"],
+              "path": ["users"]
+            },
+            "description": "Get all user profiles (requires admin role)"
           }
         }
       ]

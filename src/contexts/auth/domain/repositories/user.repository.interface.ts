@@ -8,4 +8,5 @@ export interface IUserRepository {
   findByEmail(email: Email): Promise<User | null>;
   save(user: User): Promise<void>;
   findByVerificationToken(token: string): Promise<User | null>;
+  findAll(): Promise<User[]>;
 }

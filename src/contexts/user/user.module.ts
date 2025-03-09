@@ -7,12 +7,13 @@ import { TypeOrmUserRepository } from './infrastructure/persistence/typeorm/type
 import { CreateUserHandler } from './application/commands/handlers/create-user.handler';
 import { UpdateUserProfileHandler } from './application/commands/handlers/update-user-profile.handler';
 import { GetUserByIdHandler } from './application/queries/handlers/get-user-by-id.handler';
+import { GetAllUsersHandler } from './application/queries/handlers/get-all-users.handler';
 import { USER_REPOSITORY } from './domain/user.repository';
 import { UserController } from './interfaces/http/controllers/user.controller';
 import { UserRegistrationSaga } from './application/sagas/user-registration.saga';
 
 const CommandHandlers = [CreateUserHandler, UpdateUserProfileHandler];
-const QueryHandlers = [GetUserByIdHandler];
+const QueryHandlers = [GetUserByIdHandler, GetAllUsersHandler];
 const Sagas = [UserRegistrationSaga];
 
 @Module({

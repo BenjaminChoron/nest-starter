@@ -13,9 +13,11 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/contexts/auth/interfaces/http/guards/jwt-auth.guard';
 import { CustomThrottlerGuard } from '../../../../shared/infrastructure/guards/throttler.guard';
+import { AdminGuard } from '../../../../shared/infrastructure/guards/admin.guard';
 import { CreateUserCommand } from '../../../application/commands/create-user.command';
 import { UpdateUserProfileCommand } from '../../../application/commands/update-user-profile.command';
 import { GetUserByIdQuery } from '../../../application/queries/get-user-by-id.query';
+import { GetAllUsersQuery } from '../../../application/queries/get-all-users.query';
 import { User } from '../../../domain/user.entity';
 import { CreateUserDto } from '../dtos/create-user.dto';
 import { UpdateUserProfileDto } from '../dtos/update-user-profile.dto';
@@ -118,5 +120,34 @@ export class UserController {
       phone: user.phone,
       address: user.address,
     };
+  }
+
+  @UseGuards(CustomThrottlerGuard, JwtAuthGuard, AdminGuard)
+  @Get()
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Get all users',
+    description: 'Retrieves a list of all users. This endpoint is only accessible to administrators.',
+  })
+  @ApiOkResponse({
+    type: [UserResponseDto],
+    description: 'List of users retrieved successfully',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Invalid or expired JWT token or insufficient permissions',
+  })
+  async getAllUsers(): Promise<UserResponseDto[]> {
+    const query = new GetAllUsersQuery();
+    const users = await this.queryBus.execute<GetAllUsersQuery, User[]>(query);
+
+    return users.map((user) => ({
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      profilePicture: user.profilePicture,
+      phone: user.phone,
+      address: user.address,
+    }));
   }
 }
