@@ -11,6 +11,9 @@ on:
 permissions:
   contents: read
   security-events: write
+  actions: read
+  checks: write
+  pull-requests: write
 
 # Cancel in-progress runs for PRs and non-default branches
 concurrency:
@@ -145,6 +148,12 @@ jobs:
     needs: install
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+      checks: write
+      pull-requests: write
     if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request' || github.event_name == 'schedule'
     steps:
       - uses: actions/checkout@v4
@@ -178,13 +187,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+            - name: Create reports directory
+        run: mkdir -p reports
+
       - name: Run Snyk to check for vulnerabilities
         uses: snyk/actions/node@master
         continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: --severity-threshold=medium --sarif-file-output=snyk.sarif
+          args: --severity-threshold=medium --sarif-file-output=reports/snyk.sarif
 
       - name: Run Snyk Code test
         uses: snyk/actions/node@master
@@ -192,25 +204,29 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: --code --sarif-file-output=snyk-code.sarif
+          args: --code --sarif-file-output=reports/snyk-code.sarif
 
       - name: Upload dependency scanning results
+        if: hashFiles('reports/snyk.sarif') != ''
         uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        continue-on-error: true
         with:
-          sarif_file: snyk.sarif
+          sarif_file: reports/snyk.sarif
+          category: Snyk-Dependencies
 
       - name: Upload code scanning results
+        if: hashFiles('reports/snyk-code.sarif') != ''
         uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        continue-on-error: true
         with:
-          sarif_file: snyk-code.sarif
+          sarif_file: reports/snyk-code.sarif
+          category: Snyk-Code
 
       - name: Monitor project in Snyk
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: snyk/actions/node@master
+        continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           command: monitor
-          args: monitor
