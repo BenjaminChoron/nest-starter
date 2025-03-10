@@ -10,6 +10,10 @@ export class MailService {
   }
 
   async sendVerificationEmail(email: string, verificationToken: string): Promise<void> {
+    if (process.env.NODE_ENV === 'test') {
+      return;
+    }
+
     const verificationUrl = `${this.configService.getOrThrow<string>('APP_URL')}/auth/verify?token=${verificationToken}`;
 
     const msg = {
@@ -44,6 +48,10 @@ export class MailService {
   }
 
   async sendPasswordResetEmail(email: string, resetToken: string): Promise<void> {
+    if (process.env.NODE_ENV === 'test') {
+      return;
+    }
+
     const resetUrl = `${this.configService.getOrThrow<string>('APP_URL')}/auth/password-reset?token=${resetToken}`;
 
     const msg = {
