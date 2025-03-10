@@ -1,9 +1,11 @@
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { TestHelper } from '../../test.helper';
-import { DataSource } from 'typeorm';
-import { UserEntity } from '../../../src/contexts/auth/infrastructure/persistence/typeorm/user.entity';
+import { DataSource, Repository } from 'typeorm';
+import { UserEntity as AuthUserEntity } from '../../../src/contexts/auth/infrastructure/persistence/typeorm/user.entity';
+import { UserEntity as UserProfileEntity } from '../../../src/contexts/user/infrastructure/persistence/typeorm/user.entity';
 import { Server } from 'http';
+import { LoginResponseDto, UserDto } from '../../../src/contexts/auth/interfaces/http/dtos/auth.dto';
 
 interface RegisterResponse {
   message: string;
@@ -20,13 +22,9 @@ interface LoginResponse {
   };
 }
 
-interface UserProfile {
-  id: string;
-  email: string;
-  roles: string[];
-  isEmailVerified: boolean;
-  firstName: string;
-  lastName: string;
+interface UserProfileResponse extends UserDto {
+  firstName?: string;
+  lastName?: string;
   profilePicture?: string;
   phone?: string;
   address?: string;
@@ -40,11 +38,15 @@ describe('Auth E2E Tests', () => {
   let app: INestApplication;
   let dataSource: DataSource;
   let httpServer: Server;
+  let authUserRepository: Repository<AuthUserEntity>;
+  let userProfileRepository: Repository<UserProfileEntity>;
 
   beforeAll(async () => {
     app = await TestHelper.getApp();
     dataSource = app.get(DataSource);
     httpServer = app.getHttpServer() as Server;
+    authUserRepository = dataSource.getRepository(AuthUserEntity);
+    userProfileRepository = dataSource.getRepository(UserProfileEntity);
   });
 
   afterAll(async () => {
@@ -86,13 +88,21 @@ describe('Auth E2E Tests', () => {
       );
 
       // Get verification token from database
-      const userRepository = dataSource.getRepository(UserEntity);
-      const user = await userRepository.findOne({ where: { email: testUser.email } });
-      expect(user).toBeDefined();
-      expect(user?.verificationToken).toBeDefined();
+      const authUser = await authUserRepository.findOne({ where: { email: testUser.email } });
+      if (!authUser || !authUser.verificationToken) {
+        throw new Error('Auth user not found or verification token missing');
+      }
+
+      // Create user profile
+      const userProfile = new UserProfileEntity();
+      userProfile.id = authUser.id;
+      userProfile.email = testUser.email;
+      userProfile.firstName = testUser.firstName;
+      userProfile.lastName = testUser.lastName;
+      await userProfileRepository.save(userProfile);
 
       // Verify email
-      await request(httpServer).get(`/auth/verify?token=${user?.verificationToken}`).expect(200);
+      await request(httpServer).get(`/auth/verify?token=${authUser.verificationToken}`).expect(200);
 
       // Login
       const loginResponse = await request(httpServer)
@@ -103,7 +113,7 @@ describe('Auth E2E Tests', () => {
         })
         .expect(200);
 
-      const loginBody = loginResponse.body as LoginResponse;
+      const loginBody = loginResponse.body as LoginResponseDto;
       expect(loginBody).toHaveProperty('access_token');
       expect(loginBody).toHaveProperty('refresh_token');
       expect(loginBody).toHaveProperty('user');
@@ -115,8 +125,10 @@ describe('Auth E2E Tests', () => {
         .set('Authorization', `Bearer ${loginBody.access_token}`)
         .expect(200);
 
-      const profileBody = protectedResponse.body as UserProfile;
+      const profileBody = protectedResponse.body as UserProfileResponse;
       expect(profileBody.email).toBe(testUser.email);
+      expect(profileBody.firstName).toBe(testUser.firstName);
+      expect(profileBody.lastName).toBe(testUser.lastName);
     });
 
     it('should not allow login with unverified email', async () => {
@@ -158,8 +170,7 @@ describe('Auth E2E Tests', () => {
     it('should refresh access token successfully', async () => {
       // Register and verify user
       await request(httpServer).post('/auth/register').send(testUser).expect(201);
-      const userRepository = dataSource.getRepository(UserEntity);
-      const user = await userRepository.findOne({ where: { email: testUser.email } });
+      const user = await authUserRepository.findOne({ where: { email: testUser.email } });
       await request(httpServer).get(`/auth/verify?token=${user?.verificationToken}`).expect(200);
 
       // Login to get tokens
@@ -192,8 +203,7 @@ describe('Auth E2E Tests', () => {
     it('should logout successfully and invalidate refresh token', async () => {
       // Register and verify user
       await request(httpServer).post('/auth/register').send(testUser).expect(201);
-      const userRepository = dataSource.getRepository(UserEntity);
-      const user = await userRepository.findOne({ where: { email: testUser.email } });
+      const user = await authUserRepository.findOne({ where: { email: testUser.email } });
       await request(httpServer).get(`/auth/verify?token=${user?.verificationToken}`).expect(200);
 
       // Login to get tokens
@@ -223,8 +233,7 @@ describe('Auth E2E Tests', () => {
     it('should not allow access to protected routes with expired token', async () => {
       // Register and verify user
       await request(httpServer).post('/auth/register').send(testUser).expect(201);
-      const userRepository = dataSource.getRepository(UserEntity);
-      const user = await userRepository.findOne({ where: { email: testUser.email } });
+      const user = await authUserRepository.findOne({ where: { email: testUser.email } });
       await request(httpServer).get(`/auth/verify?token=${user?.verificationToken}`).expect(200);
 
       // Use an invalid/expired token
@@ -238,8 +247,7 @@ describe('Auth E2E Tests', () => {
       it('should handle the complete password reset flow successfully', async () => {
         // Register and verify user first
         await request(httpServer).post('/auth/register').send(testUser).expect(201);
-        const userRepository = dataSource.getRepository(UserEntity);
-        const user = await userRepository.findOne({ where: { email: testUser.email } });
+        const user = await authUserRepository.findOne({ where: { email: testUser.email } });
         await request(httpServer).get(`/auth/verify?token=${user?.verificationToken}`).expect(200);
 
         // Request password reset
@@ -252,7 +260,7 @@ describe('Auth E2E Tests', () => {
         expect(resetRequestBody.message).toBe('Password reset instructions have been sent to your email');
 
         // Get the reset token from the database
-        const updatedUser = await userRepository.findOne({
+        const updatedUser = await authUserRepository.findOne({
           where: { email: testUser.email },
           select: ['id', 'email', 'passwordResetToken'],
         });
@@ -310,6 +318,115 @@ describe('Auth E2E Tests', () => {
           .post(`/auth/password-reset?token=${expiredToken}`)
           .send({ password: 'NewTest123!' })
           .expect(400);
+      });
+    });
+  });
+
+  describe('Role-Based Access Control', () => {
+    let adminToken: string;
+    let userToken: string;
+
+    beforeEach(async () => {
+      // Clear database before each test
+      await TestHelper.clearDatabase();
+
+      // Register and verify admin user
+      const adminRegisterResponse = await request(httpServer).post('/auth/register').send({
+        email: 'admin@example.com',
+        password: 'Admin123!',
+        firstName: 'Admin',
+        lastName: 'User',
+      });
+      expect(adminRegisterResponse.status).toBe(201);
+
+      // Get admin verification token and verify email
+      const adminUser = await authUserRepository.findOne({ where: { email: 'admin@example.com' } });
+      if (!adminUser || !adminUser.verificationToken) {
+        throw new Error('Admin user not found or verification token missing');
+      }
+
+      // Verify email and set admin role
+      await request(httpServer).get(`/auth/verify?token=${adminUser.verificationToken}`).expect(200);
+      await authUserRepository.update(adminUser.id, { roles: ['admin'] });
+
+      // Login as admin
+      const adminLoginResponse = await request(httpServer).post('/auth/login').send({
+        email: 'admin@example.com',
+        password: 'Admin123!',
+      });
+      const adminLoginBody = adminLoginResponse.body as LoginResponseDto;
+      adminToken = adminLoginBody.access_token;
+
+      // Register and verify regular user
+      const userRegisterResponse = await request(httpServer).post('/auth/register').send({
+        email: 'user@example.com',
+        password: 'User123!',
+        firstName: 'Regular',
+        lastName: 'User',
+      });
+      expect(userRegisterResponse.status).toBe(201);
+
+      // Get user verification token and verify email
+      const regularUser = await authUserRepository.findOne({ where: { email: 'user@example.com' } });
+      if (!regularUser || !regularUser.verificationToken) {
+        throw new Error('Regular user not found or verification token missing');
+      }
+
+      // Verify email
+      await request(httpServer).get(`/auth/verify?token=${regularUser.verificationToken}`).expect(200);
+
+      // Login as regular user
+      const userLoginResponse = await request(httpServer).post('/auth/login').send({
+        email: 'user@example.com',
+        password: 'User123!',
+      });
+      const userLoginBody = userLoginResponse.body as LoginResponseDto;
+      userToken = userLoginBody.access_token;
+    });
+
+    describe('Admin-only endpoints', () => {
+      it('should allow admin to access admin-only endpoint', async () => {
+        const response = await request(httpServer)
+          .get('/users')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200);
+
+        expect(Array.isArray(response.body)).toBe(true);
+      });
+
+      it('should deny regular user access to admin-only endpoint', async () => {
+        await request(httpServer).get('/users').set('Authorization', `Bearer ${userToken}`).expect(401);
+      });
+
+      it('should deny access to admin-only endpoint without token', async () => {
+        await request(httpServer).get('/users').expect(401);
+      });
+
+      it('should deny access with invalid token', async () => {
+        await request(httpServer).get('/users').set('Authorization', 'Bearer invalid-token').expect(401);
+      });
+    });
+
+    describe('User role verification', () => {
+      it('should include correct roles in user profile', async () => {
+        // Check admin profile
+        const adminProfileResponse = await request(httpServer)
+          .get('/auth/me')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200);
+        const adminProfile = adminProfileResponse.body as UserProfileResponse;
+
+        expect(adminProfile.roles).toContain('admin');
+
+        // Check regular user profile
+        const userProfileResponse = await request(httpServer)
+          .get('/auth/me')
+          .set('Authorization', `Bearer ${userToken}`)
+          .expect(200);
+        const userProfile = userProfileResponse.body as UserProfileResponse;
+
+        expect(userProfile.roles).toContain('user');
+        expect(userProfile.roles).not.toContain('admin');
       });
     });
   });
