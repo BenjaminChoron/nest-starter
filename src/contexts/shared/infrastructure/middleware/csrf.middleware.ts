@@ -64,6 +64,7 @@ export class CsrfTokenMiddleware implements NestMiddleware {
       });
       // Set CSRF token in a regular cookie and response header
       res.cookie('csrf-token', token, {
+        httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
       });
