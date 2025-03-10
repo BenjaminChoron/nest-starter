@@ -94,6 +94,8 @@ async function seed(): Promise<void> {
           isEmailVerified: userData.isEmailVerified ?? false,
           verificationToken: userData.isEmailVerified ? null : v4(),
           verificationTokenExpiresAt: userData.isEmailVerified ? null : new Date(Date.now() + 24 * 60 * 60 * 1000),
+          refreshToken: userData.isEmailVerified ? null : v4(),
+          refreshTokenExpiresAt: userData.isEmailVerified ? null : new Date(Date.now() + 24 * 60 * 60 * 1000),
         };
       }),
     );

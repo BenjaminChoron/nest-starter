@@ -26,6 +26,12 @@ export class UserEntity {
   @Column({ nullable: true, type: 'timestamp' })
   verificationTokenExpiresAt: Date | null;
 
+  @Column({ nullable: true, type: 'varchar' })
+  refreshToken: string | null;
+
+  @Column({ nullable: true, type: 'timestamp' })
+  refreshTokenExpiresAt: Date | null;
+
   static fromDomain(domainUser: DomainUser): UserEntity {
     const entity = new UserEntity();
     entity.id = domainUser.id;
@@ -35,6 +41,8 @@ export class UserEntity {
     entity.isEmailVerified = domainUser['_isEmailVerified'];
     entity.verificationToken = domainUser['_verificationToken'];
     entity.verificationTokenExpiresAt = domainUser['_verificationTokenExpiresAt'];
+    entity.refreshToken = domainUser['_refreshToken'];
+    entity.refreshTokenExpiresAt = domainUser['_refreshTokenExpiresAt'];
     return entity;
   }
 
@@ -49,6 +57,8 @@ export class UserEntity {
       this.isEmailVerified,
       this.verificationToken,
       this.verificationTokenExpiresAt,
+      this.refreshToken,
+      this.refreshTokenExpiresAt,
     );
   }
 }

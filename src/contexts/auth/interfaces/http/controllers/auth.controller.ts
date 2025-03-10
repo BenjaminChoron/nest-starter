@@ -8,6 +8,7 @@ import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { CustomThrottlerGuard } from '../../../../shared/infrastructure/guards/throttler.guard';
 import { GetUserByIdQuery } from '../../../../user/application/queries/get-user-by-id.query';
 import { User } from '../../../../user/domain/user.entity';
+import { RefreshTokenGuard } from '../guards/refresh-token.guard';
 import {
   ApiTags,
   ApiOkResponse,
@@ -25,7 +26,15 @@ import {
   LoginResponseDto,
   CurrentUserResponseDto,
   JwtPayload,
+  UserDto,
 } from '../dtos/auth.dto';
+import { LogoutUserCommand } from '../../../application/commands/logout-user.command';
+
+interface RefreshTokenResult {
+  access_token: string;
+  refresh_token: string;
+  user: UserDto;
+}
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -141,5 +150,45 @@ export class AuthController {
       phone: userDetails.phone,
       address: userDetails.address,
     };
+  }
+
+  @Post('refresh')
+  @UseGuards(CustomThrottlerGuard, RefreshTokenGuard as Type<RefreshTokenGuard>)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Refresh access token',
+    description: 'Get a new access token using a valid refresh token.',
+  })
+  @ApiBearerAuth('JWT-refresh')
+  @ApiOkResponse({
+    type: LoginResponseDto,
+    description: 'Successfully refreshed access token.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Invalid or expired refresh token',
+  })
+  async refreshToken(@Request() req: { user: RefreshTokenResult }): Promise<LoginResponseDto> {
+    const result = await Promise.resolve({
+      access_token: req.user.access_token,
+      refresh_token: req.user.refresh_token,
+      user: req.user.user,
+    });
+    return result;
+  }
+
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Logout user',
+    description: 'Invalidates the refresh token for the current user.',
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiOkResponse({
+    description: 'Successfully logged out.',
+  })
+  async logout(@Request() req: { user: JwtPayload }): Promise<{ message: string }> {
+    await this.commandBus.execute(new LogoutUserCommand(req.user.sub));
+    return { message: 'Successfully logged out' };
   }
 }

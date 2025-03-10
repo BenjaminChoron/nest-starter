@@ -189,26 +189,19 @@
                   "    pm.expect(jsonData).to.have.property('access_token');",
                   "    pm.expect(jsonData.access_token).to.be.a('string');",
                   "    pm.expect(jsonData.access_token).to.match(/^[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+$/);",
+                  "    pm.expect(jsonData).to.have.property('refresh_token');",
+                  "    pm.expect(jsonData.refresh_token).to.be.a('string');",
+                  "    pm.expect(jsonData.refresh_token).to.match(/^[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+$/);",
                   "});",
                   "",
-                  "// Validate JWT token structure",
+                  "// Save tokens",
                   "if (jsonData.access_token) {",
-                  "    const tokenParts = jsonData.access_token.split('.');",
-                  "    pm.test(\"JWT token has valid structure\", function () {",
-                  "        pm.expect(tokenParts).to.have.lengthOf(3);",
-                  "        const payload = JSON.parse(atob(tokenParts[1]));",
-                  "        pm.expect(payload).to.have.property('sub');",
-                  "        pm.expect(payload).to.have.property('email');",
-                  "        pm.expect(payload).to.have.property('roles');",
-                  "        pm.expect(payload).to.have.property('isEmailVerified');",
-                  "        pm.expect(payload).to.have.property('exp');",
-                  "    });",
-                  "",
-                  "    // Save token and expiration",
                   "    pm.environment.set('access_token', jsonData.access_token);",
-                  "    const payload = JSON.parse(atob(tokenParts[1]));",
-                  "    pm.environment.set('token_expiration', payload.exp * 1000);",
                   "    console.log('Access token saved to environment');",
+                  "}",
+                  "if (jsonData.refresh_token) {",
+                  "    pm.environment.set('refresh_token', jsonData.refresh_token);",
+                  "    console.log('Refresh token saved to environment');",
                   "}",
                   "",
                   "// Test error cases",
@@ -245,6 +238,127 @@
               "path": ["auth", "login"]
             },
             "description": "Login with email and password to receive JWT token. Email must be verified before login is allowed."
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Parse response",
+                  "var jsonData = JSON.parse(responseBody);",
+                  "",
+                  "// Test successful refresh",
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Validate response structure",
+                  "pm.test(\"Response matches LoginResponseDto structure\", function () {",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData).to.have.property('access_token');",
+                  "    pm.expect(jsonData.access_token).to.be.a('string');",
+                  "    pm.expect(jsonData.access_token).to.match(/^[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+$/);",
+                  "    pm.expect(jsonData).to.have.property('refresh_token');",
+                  "    pm.expect(jsonData.refresh_token).to.be.a('string');",
+                  "    pm.expect(jsonData.refresh_token).to.match(/^[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+$/);",
+                  "});",
+                  "",
+                  "// Save new tokens",
+                  "if (jsonData.access_token) {",
+                  "    pm.environment.set('access_token', jsonData.access_token);",
+                  "    console.log('New access token saved');",
+                  "}",
+                  "if (jsonData.refresh_token) {",
+                  "    pm.environment.set('refresh_token', jsonData.refresh_token);",
+                  "    console.log('New refresh token saved');",
+                  "}",
+                  "",
+                  "// Test error cases",
+                  "if (pm.response.code === 401) {",
+                  "    pm.test(\"Unauthorized error structure\", function () {",
+                  "        pm.expect(jsonData).to.have.property('message');",
+                  "        pm.expect(jsonData.message).to.equal('Invalid refresh token');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{refresh_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/refresh",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "refresh"]
+            },
+            "description": "Get new access token using refresh token"
+          }
+        },
+        {
+          "name": "Logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Parse response",
+                  "var jsonData = JSON.parse(responseBody);",
+                  "",
+                  "// Test successful logout",
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Validate response structure",
+                  "pm.test(\"Response has success message\", function () {",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData.message).to.equal('Successfully logged out');",
+                  "});",
+                  "",
+                  "// Clear tokens after successful logout",
+                  "if (pm.response.code === 200) {",
+                  "    pm.environment.unset('access_token');",
+                  "    pm.environment.unset('refresh_token');",
+                  "    console.log('Tokens cleared after logout');",
+                  "}",
+                  "",
+                  "// Test error cases",
+                  "if (pm.response.code === 401) {",
+                  "    pm.test(\"Unauthorized error structure\", function () {",
+                  "        pm.expect(jsonData).to.have.property('message');",
+                  "        pm.expect(jsonData.message).to.equal('Unauthorized');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Logout user and invalidate refresh token"
           }
         },
         {

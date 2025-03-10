@@ -11,6 +11,8 @@ export class User extends AggregateRoot {
     private _isEmailVerified: boolean = false,
     private _verificationToken: string | null = null,
     private _verificationTokenExpiresAt: Date | null = null,
+    private _refreshToken: string | null = null,
+    private _refreshTokenExpiresAt: Date | null = null,
   ) {
     super();
   }
@@ -39,6 +41,14 @@ export class User extends AggregateRoot {
     return this._verificationTokenExpiresAt;
   }
 
+  get refreshToken(): string | null {
+    return this._refreshToken;
+  }
+
+  get refreshTokenExpiresAt(): Date | null {
+    return this._refreshTokenExpiresAt;
+  }
+
   setVerificationToken(token: string, expiresAt: Date): void {
     this._verificationToken = token;
     this._verificationTokenExpiresAt = expiresAt;
@@ -58,12 +68,31 @@ export class User extends AggregateRoot {
     this._password = await Password.create(password);
   }
 
+  setRefreshToken(token: string, expiresAt: Date): void {
+    this._refreshToken = token;
+    this._refreshTokenExpiresAt = expiresAt;
+  }
+
+  clearRefreshToken(): void {
+    this._refreshToken = null;
+    this._refreshTokenExpiresAt = null;
+  }
+
+  isRefreshTokenValid(): boolean {
+    if (!this._refreshToken || !this._refreshTokenExpiresAt) {
+      return false;
+    }
+    return new Date() < this._refreshTokenExpiresAt;
+  }
+
   toJSON() {
     return {
       id: this._id,
       email: this._email.toString(),
       roles: this._roles,
       isEmailVerified: this._isEmailVerified,
+      refreshToken: this._refreshToken,
+      refreshTokenExpiresAt: this._refreshTokenExpiresAt,
     };
   }
 }

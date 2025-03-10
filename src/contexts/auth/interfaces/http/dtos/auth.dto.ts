@@ -8,6 +8,13 @@ export interface JwtPayload {
   isEmailVerified: boolean;
 }
 
+export interface UserDto {
+  id: string;
+  email: string;
+  roles: string[];
+  isEmailVerified: boolean;
+}
+
 export class AuthCredentialsDto {
   @ApiProperty({ example: 'user@example.com' })
   @IsEmail({}, { message: 'Please provide a valid email address' })
@@ -29,16 +36,39 @@ export class AuthCredentialsDto {
 }
 
 export class RegisterResponseDto {
-  @ApiProperty({ example: 'User registered successfully' })
+  @ApiProperty({
+    example: 'User registered successfully. Please check your email for verification instructions.',
+  })
   message: string;
 }
 
 export class LoginResponseDto {
-  @ApiProperty({ example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' })
+  @ApiProperty({
+    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+    description: 'JWT access token',
+  })
   access_token: string;
+
+  @ApiProperty({
+    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+    description: 'JWT refresh token',
+  })
+  refresh_token: string;
+
+  @ApiProperty({
+    description: 'User information',
+    type: 'object',
+    properties: {
+      id: { type: 'string', example: '123e4567-e89b-12d3-a456-426614174000' },
+      email: { type: 'string', example: 'user@example.com' },
+      roles: { type: 'array', items: { type: 'string' }, example: ['user'] },
+      isEmailVerified: { type: 'boolean', example: true },
+    },
+  })
+  user: UserDto;
 }
 
-export class CurrentUserResponseDto {
+export class CurrentUserResponseDto implements UserDto {
   @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
   id: string;
 
@@ -51,18 +81,18 @@ export class CurrentUserResponseDto {
   @ApiProperty({ example: true })
   isEmailVerified: boolean;
 
-  @ApiProperty({ example: 'John' })
-  firstName: string;
+  @ApiPropertyOptional()
+  firstName?: string;
 
-  @ApiProperty({ example: 'Doe' })
-  lastName: string;
+  @ApiPropertyOptional()
+  lastName?: string;
 
-  @ApiPropertyOptional({ example: 'https://example.com/profile.jpg' })
+  @ApiPropertyOptional()
   profilePicture?: string;
 
-  @ApiPropertyOptional({ example: '+1234567890' })
+  @ApiPropertyOptional()
   phone?: string;
 
-  @ApiPropertyOptional({ example: '123 Main St, City, Country' })
+  @ApiPropertyOptional()
   address?: string;
 }
