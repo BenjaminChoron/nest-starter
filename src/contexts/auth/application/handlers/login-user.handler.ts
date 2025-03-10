@@ -43,7 +43,9 @@ export class LoginUserHandler implements ICommandHandler<LoginUserCommand> {
     };
 
     // Generate access token
-    const access_token = await this.jwtService.signAsync(payload);
+    const access_token = await this.jwtService.signAsync(payload, {
+      expiresIn: this.configService.getOrThrow('JWT_ACCESS_TOKEN_TTL'),
+    });
 
     // Generate refresh token
     const refreshPayload = {
@@ -53,7 +55,7 @@ export class LoginUserHandler implements ICommandHandler<LoginUserCommand> {
 
     const refresh_token = await this.jwtService.signAsync(refreshPayload, {
       secret: this.configService.getOrThrow('JWT_REFRESH_SECRET'),
-      expiresIn: '7d',
+      expiresIn: this.configService.getOrThrow('JWT_REFRESH_TOKEN_TTL'),
     });
 
     // Save refresh token to user

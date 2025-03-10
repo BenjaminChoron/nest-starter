@@ -2,17 +2,22 @@ import { InvalidEmailException } from '../../../../contexts/shared/application/e
 
 export class Email {
   private readonly value: string;
+  private static readonly EMAIL_REGEX =
+    /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z]{2,})+$/;
 
   constructor(email: string) {
     this.validate(email);
-    this.value = email;
+    this.value = email.toLowerCase();
   }
 
   private validate(email: string): void {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email || !emailRegex.test(email)) {
+    if (!email || !Email.EMAIL_REGEX.test(email)) {
       throw new InvalidEmailException(email);
     }
+  }
+
+  getValue(): string {
+    return this.value;
   }
 
   toString(): string {
