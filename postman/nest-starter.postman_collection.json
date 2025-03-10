@@ -419,6 +419,155 @@
             },
             "description": "Get current user information (requires authentication)"
           }
+        },
+        {
+          "name": "Request Password Reset",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Add CSRF token to request if available",
+                  "if (pm.environment.get('csrf_token')) {",
+                  "    pm.request.headers.add({",
+                  "        key: 'x-csrf-token',",
+                  "        value: pm.environment.get('csrf_token')",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Parse response",
+                  "var jsonData = JSON.parse(responseBody);",
+                  "",
+                  "// Test successful request",
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Validate response structure",
+                  "pm.test(\"Response has success message\", function () {",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData.message).to.equal('Password reset instructions have been sent to your email');",
+                  "});",
+                  "",
+                  "// Test error cases",
+                  "if (pm.response.code === 404) {",
+                  "    pm.test(\"Not found error structure\", function () {",
+                  "        pm.expect(jsonData).to.have.property('message');",
+                  "        pm.expect(jsonData.message).to.equal('User not found');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"{{email}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/password-reset/request",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "password-reset", "request"]
+            },
+            "description": "Request a password reset email. A reset token will be sent to the provided email address."
+          }
+        },
+        {
+          "name": "Reset Password",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Add CSRF token to request if available",
+                  "if (pm.environment.get('csrf_token')) {",
+                  "    pm.request.headers.add({",
+                  "        key: 'x-csrf-token',",
+                  "        value: pm.environment.get('csrf_token')",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Parse response",
+                  "var jsonData = JSON.parse(responseBody);",
+                  "",
+                  "// Test successful reset",
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Validate response structure",
+                  "pm.test(\"Response has success message\", function () {",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData.message).to.equal('Password has been reset successfully');",
+                  "});",
+                  "",
+                  "// Test error cases",
+                  "if (pm.response.code === 400) {",
+                  "    pm.test(\"Bad request error structure\", function () {",
+                  "        pm.expect(jsonData).to.have.property('message');",
+                  "        const validMessages = [",
+                  "            'Invalid password reset token',",
+                  "            'Password reset token has expired'",
+                  "        ];",
+                  "        pm.expect(validMessages).to.include(jsonData.message);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"password\": \"{{new_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/password-reset?token={{reset_token}}",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "password-reset"],
+              "query": [
+                {
+                  "key": "token",
+                  "value": "{{reset_token}}",
+                  "description": "Password reset token received via email"
+                }
+              ]
+            },
+            "description": "Reset password using the token received via email. The new password must meet the same requirements as registration."
+          }
         }
       ]
     },

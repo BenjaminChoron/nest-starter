@@ -13,6 +13,8 @@ export class User extends AggregateRoot {
     private _verificationTokenExpiresAt: Date | null = null,
     private _refreshToken: string | null = null,
     private _refreshTokenExpiresAt: Date | null = null,
+    private _passwordResetToken: string | null = null,
+    private _passwordResetTokenExpiresAt: Date | null = null,
   ) {
     super();
   }
@@ -49,6 +51,14 @@ export class User extends AggregateRoot {
     return this._refreshTokenExpiresAt;
   }
 
+  get passwordResetToken(): string | null {
+    return this._passwordResetToken;
+  }
+
+  get passwordResetTokenExpiresAt(): Date | null {
+    return this._passwordResetTokenExpiresAt;
+  }
+
   setVerificationToken(token: string, expiresAt: Date): void {
     this._verificationToken = token;
     this._verificationTokenExpiresAt = expiresAt;
@@ -83,6 +93,23 @@ export class User extends AggregateRoot {
       return false;
     }
     return new Date() < this._refreshTokenExpiresAt;
+  }
+
+  setPasswordResetToken(token: string, expiresAt: Date): void {
+    this._passwordResetToken = token;
+    this._passwordResetTokenExpiresAt = expiresAt;
+  }
+
+  clearPasswordResetToken(): void {
+    this._passwordResetToken = null;
+    this._passwordResetTokenExpiresAt = null;
+  }
+
+  isPasswordResetTokenValid(): boolean {
+    if (!this._passwordResetToken || !this._passwordResetTokenExpiresAt) {
+      return false;
+    }
+    return this._passwordResetTokenExpiresAt > new Date();
   }
 
   toJSON() {

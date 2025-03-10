@@ -22,6 +22,8 @@ import { USER_REPOSITORY } from './domain/repositories/user.repository.interface
 import { TypeOrmUserRepository } from './infrastructure/persistence/typeorm/typeorm-user.repository';
 import { UserEntity } from './infrastructure/persistence/typeorm/user.entity';
 import { SharedModule } from '../shared/shared.module';
+import { RequestPasswordResetHandler } from './application/handlers/request-password-reset.handler';
+import { ResetPasswordHandler } from './application/handlers/reset-password.handler';
 
 const commandHandlers = [
   RegisterUserHandler,
@@ -29,6 +31,8 @@ const commandHandlers = [
   LogoutUserHandler,
   ValidateRefreshTokenHandler,
   VerifyEmailHandler,
+  RequestPasswordResetHandler,
+  ResetPasswordHandler,
 ];
 const strategies = [LocalStrategy, JwtStrategy, RefreshTokenStrategy];
 const guards = [LocalAuthGuard, JwtAuthGuard, RefreshTokenGuard];

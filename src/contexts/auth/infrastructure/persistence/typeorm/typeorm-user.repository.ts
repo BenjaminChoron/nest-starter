@@ -51,4 +51,24 @@ export class TypeOrmUserRepository implements IUserRepository {
     const userEntities = await this.userRepository.find();
     return Promise.all(userEntities.map((entity) => entity.toDomain()));
   }
+
+  async findByRefreshToken(token: string): Promise<User | null> {
+    const userEntity = await this.userRepository.findOne({
+      where: { refreshToken: token },
+    });
+    if (!userEntity) {
+      return null;
+    }
+    return userEntity.toDomain();
+  }
+
+  async findByPasswordResetToken(token: string): Promise<User | null> {
+    const userEntity = await this.userRepository.findOne({
+      where: { passwordResetToken: token },
+    });
+    if (!userEntity) {
+      return null;
+    }
+    return userEntity.toDomain();
+  }
 }

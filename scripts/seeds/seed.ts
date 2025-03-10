@@ -21,6 +21,12 @@ interface UserSeedData {
   address?: string;
   roles?: string[];
   isEmailVerified?: boolean;
+  verificationToken: string | null;
+  verificationTokenExpiresAt: Date | null;
+  refreshToken: string | null;
+  refreshTokenExpiresAt: Date | null;
+  passwordResetToken: string | null;
+  passwordResetTokenExpiresAt: Date | null;
 }
 
 const SEED_USERS: UserSeedData[] = [
@@ -35,6 +41,12 @@ const SEED_USERS: UserSeedData[] = [
     address: '123 Main St, City, Country',
     roles: ['user', 'admin'],
     isEmailVerified: true,
+    verificationToken: null,
+    verificationTokenExpiresAt: null,
+    refreshToken: null,
+    refreshTokenExpiresAt: null,
+    passwordResetToken: null,
+    passwordResetTokenExpiresAt: null,
   },
   {
     id: v4(),
@@ -47,6 +59,12 @@ const SEED_USERS: UserSeedData[] = [
     address: '456 Oak Ave, Town, Country',
     roles: ['user'],
     isEmailVerified: true,
+    verificationToken: null,
+    verificationTokenExpiresAt: null,
+    refreshToken: null,
+    refreshTokenExpiresAt: null,
+    passwordResetToken: null,
+    passwordResetTokenExpiresAt: null,
   },
   {
     id: v4(),
@@ -59,6 +77,12 @@ const SEED_USERS: UserSeedData[] = [
     address: '789 Pine Rd, Village, Country',
     roles: ['user'],
     isEmailVerified: false,
+    verificationToken: v4(),
+    verificationTokenExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    refreshToken: null,
+    refreshTokenExpiresAt: null,
+    passwordResetToken: null,
+    passwordResetTokenExpiresAt: null,
   },
 ];
 
@@ -92,10 +116,12 @@ async function seed(): Promise<void> {
           password: hashedPassword.toString(),
           roles: userData.roles || ['user'],
           isEmailVerified: userData.isEmailVerified ?? false,
-          verificationToken: userData.isEmailVerified ? null : v4(),
-          verificationTokenExpiresAt: userData.isEmailVerified ? null : new Date(Date.now() + 24 * 60 * 60 * 1000),
-          refreshToken: userData.isEmailVerified ? null : v4(),
-          refreshTokenExpiresAt: userData.isEmailVerified ? null : new Date(Date.now() + 24 * 60 * 60 * 1000),
+          verificationToken: userData.verificationToken ?? null,
+          verificationTokenExpiresAt: userData.verificationTokenExpiresAt ?? null,
+          refreshToken: userData.refreshToken ?? null,
+          refreshTokenExpiresAt: userData.refreshTokenExpiresAt ?? null,
+          passwordResetToken: userData.passwordResetToken ?? null,
+          passwordResetTokenExpiresAt: userData.passwordResetTokenExpiresAt ?? null,
         };
       }),
     );

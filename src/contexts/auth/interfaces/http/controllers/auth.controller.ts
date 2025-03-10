@@ -3,6 +3,8 @@ import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { RegisterUserCommand } from '../../../application/commands/register-user.command';
 import { LoginUserCommand } from '../../../application/commands/login-user.command';
 import { VerifyEmailCommand } from '../../../application/commands/verify-email.command';
+import { RequestPasswordResetCommand } from '../../../application/commands/request-password-reset.command';
+import { ResetPasswordCommand } from '../../../application/commands/reset-password.command';
 import { LocalAuthGuard } from '../guards/local-auth.guard';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { CustomThrottlerGuard } from '../../../../shared/infrastructure/guards/throttler.guard';
@@ -27,6 +29,8 @@ import {
   CurrentUserResponseDto,
   JwtPayload,
   UserDto,
+  RequestPasswordResetDto,
+  ResetPasswordDto,
 } from '../dtos/auth.dto';
 import { LogoutUserCommand } from '../../../application/commands/logout-user.command';
 
@@ -190,5 +194,72 @@ export class AuthController {
   async logout(@Request() req: { user: JwtPayload }): Promise<{ message: string }> {
     await this.commandBus.execute(new LogoutUserCommand(req.user.sub));
     return { message: 'Successfully logged out' };
+  }
+
+  @UseGuards(CustomThrottlerGuard)
+  @Post('password-reset/request')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Request password reset',
+    description: 'Sends a password reset email to the provided email address.',
+  })
+  @ApiBody({ type: RequestPasswordResetDto })
+  @ApiOkResponse({
+    description: 'Password reset email sent successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        message: {
+          type: 'string',
+          example: 'Password reset instructions have been sent to your email',
+        },
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid email address',
+  })
+  @ApiNotFoundResponse({
+    description: 'User not found',
+  })
+  async requestPasswordReset(@Body() dto: RequestPasswordResetDto): Promise<{ message: string }> {
+    await this.commandBus.execute(new RequestPasswordResetCommand(dto.email));
+    return { message: 'Password reset instructions have been sent to your email' };
+  }
+
+  @UseGuards(CustomThrottlerGuard)
+  @Post('password-reset')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Reset password',
+    description: 'Resets the password using the token received via email.',
+  })
+  @ApiQuery({
+    name: 'token',
+    description: 'Password reset token received via email',
+    required: true,
+  })
+  @ApiBody({
+    type: ResetPasswordDto,
+    description: 'New password',
+  })
+  @ApiOkResponse({
+    description: 'Password reset successful',
+    schema: {
+      type: 'object',
+      properties: {
+        message: {
+          type: 'string',
+          example: 'Password has been reset successfully',
+        },
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid or expired reset token',
+  })
+  async resetPassword(@Query('token') token: string, @Body() dto: ResetPasswordDto): Promise<{ message: string }> {
+    await this.commandBus.execute(new ResetPasswordCommand(token, dto.password));
+    return { message: 'Password has been reset successfully' };
   }
 }

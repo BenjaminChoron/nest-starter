@@ -14,6 +14,7 @@ import { GetAllUsersHandler } from './application/queries/handlers/get-all-users
 import { USER_REPOSITORY } from './domain/user.repository';
 import { UserController } from './interfaces/http/controllers/user.controller';
 import { UserRegistrationSaga } from './application/sagas/user-registration.saga';
+import { PasswordResetRequestedHandler } from '../auth/application/events-handlers/password-reset-requested.handler';
 
 const CommandHandlers = [CreateUserHandler, UpdateUserProfileHandler];
 const QueryHandlers = [GetUserByIdHandler, GetAllUsersHandler];
@@ -43,6 +44,7 @@ const Sagas = [UserRegistrationSaga];
     ...CommandHandlers,
     ...QueryHandlers,
     ...Sagas,
+    PasswordResetRequestedHandler,
     {
       provide: USER_REPOSITORY,
       useClass: TypeOrmUserRepository,

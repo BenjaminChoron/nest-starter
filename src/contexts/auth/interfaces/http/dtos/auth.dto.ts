@@ -96,3 +96,25 @@ export class CurrentUserResponseDto implements UserDto {
   @ApiPropertyOptional()
   address?: string;
 }
+
+export class RequestPasswordResetDto {
+  @ApiProperty({ example: 'user@example.com' })
+  @IsEmail({}, { message: 'Please provide a valid email address' })
+  email: string;
+}
+
+export class ResetPasswordDto {
+  @ApiProperty({
+    example: 'StrongP@ss123',
+    description:
+      'Password must be 8-64 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character',
+  })
+  @IsString()
+  @MinLength(8, { message: 'Password must be at least 8 characters long' })
+  @MaxLength(64, { message: 'Password must not exceed 64 characters' })
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, {
+    message:
+      'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&)',
+  })
+  password: string;
+}
