@@ -47,8 +47,22 @@ export class CloudinaryService {
 
   private getPublicIdFromUrl(url: string): string | null {
     try {
+      if (!url.startsWith('https://res.cloudinary.com/')) {
+        return null;
+      }
+
       const urlParts = url.split('/');
+      // We expect: https://res.cloudinary.com/cloud-name/folder/filename.ext
+      // So minimum 5 parts: ['https:', '', 'res.cloudinary.com', 'cloud-name', 'folder', 'filename.ext']
+      if (urlParts.length < 6) {
+        return null;
+      }
+
       const filename = urlParts[urlParts.length - 1];
+      if (!filename.includes('.')) {
+        return null;
+      }
+
       const publicId = filename.split('.')[0];
       const folder = urlParts[urlParts.length - 2];
       return `${folder}/${publicId}`;
