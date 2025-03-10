@@ -5,7 +5,7 @@ import { LoginUserHandler } from './login-user.handler';
 import { LoginUserCommand } from '../commands/login-user.command';
 import { IUserRepository, USER_REPOSITORY } from '../../domain/repositories/user.repository.interface';
 import { UnauthorizedException } from '@nestjs/common';
-import { testData, createTestUser, createVerifiedTestUser } from '../../../../../test/test-helpers';
+import { testData, createTestUser, createVerifiedTestUser } from '../../../../../test/test.helper';
 
 describe('LoginUserHandler', () => {
   let handler: LoginUserHandler;
