@@ -177,13 +177,32 @@ Default database configuration:
 
 The authentication system includes:
 
-- JWT-based authentication
+- JWT-based authentication with refresh token support
+  - Access tokens for short-term authentication
+  - Refresh tokens for obtaining new access tokens
+  - Secure token rotation on refresh
+  - Refresh token invalidation on logout
 - Local strategy for username/password login
 - Password hashing with bcrypt
 - Protected routes with Guards
 - Role-based access control
 - CSRF protection for all mutating requests
 - Rate limiting to prevent brute force attacks
+
+Authentication flow:
+
+1. User logs in with credentials
+2. Server provides access token and refresh token
+3. Access token is used for API requests
+4. When access token expires, refresh token can be used to obtain new tokens
+5. On logout, user's refresh token is invalidated
+
+Available endpoints:
+
+- POST `/auth/login` - Authenticate user and receive tokens
+- POST `/auth/refresh` - Get new access token using refresh token
+- POST `/auth/logout` - Invalidate refresh token
+- GET `/auth/me` - Get current user profile
 
 ### Security Features
 
