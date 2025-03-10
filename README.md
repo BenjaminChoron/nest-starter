@@ -1,7 +1,7 @@
 # NestJS Starter
 
-[![NestJS](https://img.shields.io/badge/NestJS-v11-ea2845.svg)](https://nestjs.com/)
-[![Node](https://img.shields.io/badge/Node-%3E%3D18-brightgreen.svg)](https://nodejs.org)
+[![NestJS](https://img.shields.io/badge/NestJS-v11.0.10-ea2845.svg)](https://nestjs.com/)
+[![Node](https://img.shields.io/badge/Node-%3E%3D20-brightgreen.svg)](https://nodejs.org)
 [![PNPM](https://img.shields.io/badge/pnpm-latest-orange.svg)](https://pnpm.io/)
 [![CI](https://github.com/BenjaminChoron/nest-starter/actions/workflows/ci.yml/badge.svg)](https://github.com/BenjaminChoron/nest-starter/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)]()
@@ -32,7 +32,7 @@ A modern, well-structured NestJS starter template with best practices and essent
 
 ## Prerequisites
 
-- Node.js (v18 or higher recommended)
+- Node.js (v20 or higher required)
 - PNPM package manager
 - Docker and Docker Compose (for local database)
 - Cloudinary account (for file uploads)
