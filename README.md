@@ -353,7 +353,7 @@ pnpm run snyk:monitor   # Monitor project in Snyk dashboard
 
 ## License
 
-[UNLICENSED]
+[MIT](LICENSE)
 
 ## Author
 
