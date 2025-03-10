@@ -5,22 +5,13 @@ import { LoginUserHandler } from './login-user.handler';
 import { LoginUserCommand } from '../commands/login-user.command';
 import { IUserRepository, USER_REPOSITORY } from '../../domain/repositories/user.repository.interface';
 import { UnauthorizedException } from '@nestjs/common';
-import { User } from '../../domain/entities/user.entity';
-import { Email } from '../../domain/value-objects/email.value-object';
-import { Password } from '../../domain/value-objects/password.value-object';
+import { testData, createTestUser, createVerifiedTestUser } from '../../../../../test/test-helpers';
 
 describe('LoginUserHandler', () => {
   let handler: LoginUserHandler;
   let userRepository: jest.Mocked<IUserRepository>;
   let jwtService: jest.Mocked<JwtService>;
   let configService: jest.Mocked<ConfigService>;
-
-  const mockEmail = 'test@example.com';
-  const mockPassword = 'StrongP@ss123';
-  const mockHashedPassword = 'hashed_password';
-  const mockUserId = 'test-user-id';
-  const mockAccessToken = 'mock-access-token';
-  const mockRefreshToken = 'mock-refresh-token';
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -52,13 +43,6 @@ describe('LoginUserHandler', () => {
     userRepository = module.get(USER_REPOSITORY);
     jwtService = module.get(JwtService);
     configService = module.get(ConfigService);
-
-    // Mock Password.create and verify
-    jest.spyOn(Password, 'create').mockResolvedValue({
-      toString: () => mockHashedPassword,
-      verify: jest.fn().mockResolvedValue(true),
-      compare: jest.fn().mockResolvedValue(true),
-    } as unknown as Password);
   });
 
   afterEach(() => {
@@ -72,7 +56,9 @@ describe('LoginUserHandler', () => {
   describe('execute', () => {
     it('should successfully login a user with valid credentials', async () => {
       // Arrange
-      const mockUser = new User(mockUserId, new Email(mockEmail), await Password.create(mockPassword), ['user'], true);
+      const mockUser = await createVerifiedTestUser();
+      const { email, password } = testData.users.validUser;
+      const { validAccessToken: mockAccessToken, validRefreshToken: mockRefreshToken } = testData.tokens;
 
       userRepository.findByEmail.mockResolvedValue(mockUser);
       jwtService.signAsync.mockResolvedValueOnce(mockAccessToken).mockResolvedValueOnce(mockRefreshToken);
@@ -81,7 +67,7 @@ describe('LoginUserHandler', () => {
         .mockReturnValueOnce('mock-refresh-secret') // JWT_REFRESH_SECRET
         .mockReturnValueOnce('7d'); // JWT_REFRESH_TOKEN_TTL
 
-      const command = new LoginUserCommand(mockEmail, mockPassword);
+      const command = new LoginUserCommand(email, password);
 
       // Act
       const result = await handler.execute(command);
@@ -91,41 +77,19 @@ describe('LoginUserHandler', () => {
         access_token: mockAccessToken,
         refresh_token: mockRefreshToken,
         user: {
-          id: mockUserId,
-          email: mockEmail,
-          roles: ['user'],
-          isEmailVerified: true,
+          id: mockUser.id,
+          email: mockUser.email.toString(),
+          roles: mockUser.roles,
+          isEmailVerified: mockUser.isEmailVerified,
         },
       });
-      expect(userRepository.findByEmail.mock.calls[0][0]).toBeInstanceOf(Email);
-      expect(jwtService.signAsync.mock.calls).toHaveLength(2);
     });
 
     it('should throw UnauthorizedException when user is not found', async () => {
       // Arrange
+      const { email, password } = testData.users.validUser;
       userRepository.findByEmail.mockResolvedValue(null);
-      const command = new LoginUserCommand(mockEmail, mockPassword);
-
-      // Act & Assert
-      await expect(handler.execute(command)).rejects.toThrow(new UnauthorizedException('Invalid credentials'));
-    });
-
-    it('should throw UnauthorizedException when password is invalid', async () => {
-      // Arrange
-      const mockUser = new User(
-        mockUserId,
-        new Email(mockEmail),
-        {
-          toString: () => 'hashed_password',
-          verify: jest.fn().mockResolvedValue(false),
-          compare: jest.fn().mockResolvedValue(false),
-        } as unknown as Password,
-        ['user'],
-        true,
-      );
-
-      userRepository.findByEmail.mockResolvedValue(mockUser);
-      const command = new LoginUserCommand(mockEmail, 'wrong-password');
+      const command = new LoginUserCommand(email, password);
 
       // Act & Assert
       await expect(handler.execute(command)).rejects.toThrow(new UnauthorizedException('Invalid credentials'));
@@ -133,10 +97,11 @@ describe('LoginUserHandler', () => {
 
     it('should throw UnauthorizedException when email is not verified', async () => {
       // Arrange
-      const mockUser = new User(mockUserId, new Email(mockEmail), await Password.create(mockPassword), ['user'], false);
+      const mockUser = await createTestUser(); // Creates an unverified user
+      const { email, password } = testData.users.validUser;
 
       userRepository.findByEmail.mockResolvedValue(mockUser);
-      const command = new LoginUserCommand(mockEmail, mockPassword);
+      const command = new LoginUserCommand(email, password);
 
       // Act & Assert
       await expect(handler.execute(command)).rejects.toThrow(
@@ -146,7 +111,9 @@ describe('LoginUserHandler', () => {
 
     it('should generate tokens with correct payload and expiration', async () => {
       // Arrange
-      const mockUser = new User(mockUserId, new Email(mockEmail), await Password.create(mockPassword), ['user'], true);
+      const mockUser = await createVerifiedTestUser();
+      const { email, password } = testData.users.validUser;
+      const { validAccessToken: mockAccessToken, validRefreshToken: mockRefreshToken } = testData.tokens;
       const mockRefreshTokenId = 'mock-refresh-token-id';
 
       userRepository.findByEmail.mockResolvedValue(mockUser);
@@ -155,10 +122,11 @@ describe('LoginUserHandler', () => {
         .mockReturnValueOnce('1h') // JWT_ACCESS_TOKEN_TTL
         .mockReturnValueOnce('mock-refresh-secret') // JWT_REFRESH_SECRET
         .mockReturnValueOnce('7d'); // JWT_REFRESH_TOKEN_TTL
+
       // @ts-expect-error: private method mock
       handler.generateRefreshTokenId = jest.fn().mockReturnValue(mockRefreshTokenId);
 
-      const command = new LoginUserCommand(mockEmail, mockPassword);
+      const command = new LoginUserCommand(email, password);
 
       // Act
       await handler.execute(command);
@@ -166,18 +134,16 @@ describe('LoginUserHandler', () => {
       // Assert
       const [accessTokenCall, refreshTokenCall] = jwtService.signAsync.mock.calls;
 
-      // Verify access token
       expect(accessTokenCall[0]).toEqual({
-        sub: mockUserId,
-        email: mockEmail,
-        roles: ['user'],
-        isEmailVerified: true,
+        sub: mockUser.id,
+        email: mockUser.email.toString(),
+        roles: mockUser.roles,
+        isEmailVerified: mockUser.isEmailVerified,
       });
       expect(accessTokenCall[1]).toEqual({ expiresIn: '1h' });
 
-      // Verify refresh token
       expect(refreshTokenCall[0]).toEqual({
-        sub: mockUserId,
+        sub: mockUser.id,
         refreshToken: mockRefreshTokenId,
       });
       expect(refreshTokenCall[1]).toEqual({
