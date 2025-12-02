@@ -1,7 +1,7 @@
 # NestJS Starter
 
 [![NestJS](https://img.shields.io/badge/NestJS-v11.0.10-ea2845.svg)](https://nestjs.com/)
-[![Node](https://img.shields.io/badge/Node-%3E%3D20-brightgreen.svg)](https://nodejs.org)
+[![Node](https://img.shields.io/badge/Node-%3E%3D22-brightgreen.svg)](https://nodejs.org)
 [![PNPM](https://img.shields.io/badge/pnpm-latest-orange.svg)](https://pnpm.io/)
 [![CI](https://github.com/BenjaminChoron/nest-starter/actions/workflows/ci.yml/badge.svg)](https://github.com/BenjaminChoron/nest-starter/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)]()
@@ -32,10 +32,11 @@ A modern, well-structured NestJS starter template with best practices and essent
 
 ## Prerequisites
 
-- Node.js (v20 or higher required)
+- Node.js (v22 or higher required)
 - PNPM package manager
 - Docker and Docker Compose (for local database)
 - Cloudinary account (for file uploads)
+- SendGrid account (for email sending)
 
 ## Getting Started
 
@@ -156,13 +157,13 @@ The project uses PostgreSQL as its database. A Docker Compose configuration is i
 
 ```bash
 # Start the database
-docker-compose up -d
+docker compose up -d
 
 # Stop the database
-docker-compose down
+docker compose down
 
 # Stop the database and remove data
-docker-compose down -v
+docker compose down -v
 ```
 
 Default database configuration:
