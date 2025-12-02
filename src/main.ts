@@ -38,11 +38,13 @@ A modern REST API built with NestJS, implementing Domain-Driven Design (DDD) and
 - PostgreSQL database
 - Swagger API documentation
 
+## CSRF Protection
+This API uses CSRF protection mechanisms. To get a CSRF token, make a GET request to /csrf
+
 ## Authentication
 Most endpoints require Bearer token authentication. To get a token:
-1. Register a new user (/auth/register)
-2. Login with credentials (/auth/login)
-3. Use the returned token in the Authorization header
+1. Login with credentials (/auth/login)
+2. Use the returned token in the Authorization header
     `,
     )
     .setVersion('1.0')

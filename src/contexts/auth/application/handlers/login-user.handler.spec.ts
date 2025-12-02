@@ -7,6 +7,12 @@ import { IUserRepository, USER_REPOSITORY } from '../../domain/repositories/user
 import { UnauthorizedException } from '@nestjs/common';
 import { testData, createTestUser, createVerifiedTestUser } from '../../../../../test/test.helper';
 
+jest.mock('bcrypt', () => ({
+  hash: jest.fn().mockResolvedValue('hashed-password'),
+  compare: jest.fn().mockResolvedValue(true),
+  genSalt: jest.fn().mockResolvedValue('salt'),
+}));
+
 describe('LoginUserHandler', () => {
   let handler: LoginUserHandler;
   let userRepository: jest.Mocked<IUserRepository>;
