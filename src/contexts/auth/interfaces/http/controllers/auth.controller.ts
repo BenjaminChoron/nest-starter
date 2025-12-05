@@ -21,6 +21,7 @@ import {
   ApiUnauthorizedResponse,
   ApiBadRequestResponse,
   ApiNotFoundResponse,
+  ApiCreatedResponse,
 } from '@nestjs/swagger';
 import {
   AuthCredentialsDto,
@@ -55,7 +56,7 @@ export class AuthController {
     description: 'Creates a new user account and sends a verification email to the provided email address.',
   })
   @ApiBody({ type: AuthCredentialsDto })
-  @ApiOkResponse({
+  @ApiCreatedResponse({
     type: RegisterResponseDto,
     description: 'User successfully registered. A verification email has been sent.',
   })
