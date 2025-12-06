@@ -24,7 +24,7 @@ A modern, well-structured NestJS starter template with best practices and essent
 - 📋 Conventional commits with commitlint
 - 🔄 Hot reload in development
 - 🐳 Docker Compose for local development
-- 📧 Email integration with SendGrid
+- 📧 Email integration with SMTP
 - 🔐 Secure password hashing with bcrypt
 - 🔄 Continuous Integration with GitHub Actions
 - 🖼️ File uploads with Cloudinary integration
@@ -36,7 +36,7 @@ A modern, well-structured NestJS starter template with best practices and essent
 - PNPM package manager
 - Docker and Docker Compose (for local database)
 - Cloudinary account (for file uploads)
-- SendGrid account (for email sending)
+- SMTP credentials (for email sending)
 
 ## Getting Started
 
@@ -60,10 +60,9 @@ cp .env.example .env
 ```
 
 4. Configure your environment variables in `.env`:
-
    - Database settings
    - JWT secret
-   - SendGrid credentials
+   - SMTP credentials
    - Cloudinary credentials (get these from your Cloudinary dashboard)
 
 5. Start the database:
@@ -128,10 +127,13 @@ The project uses environment variables for configuration. Required variables inc
 
 - `JWT_SECRET` - Secret key for JWT tokens
 
-#### SendGrid Configuration
+#### SMTP Configuration
 
-- `SENDGRID_API_KEY` - SendGrid API key
-- `SENDGRID_FROM_EMAIL` - Verified sender email
+- `SMTP_HOST` - SMTP server host
+- `SMTP_PORT` - SMTP server port
+- `SMTP_FROM` - Default "from" email address
+- `SMTP_USER` - SMTP username
+- `SMTP_PASS` - SMTP password
 
 #### Cloudinary Configuration
 
