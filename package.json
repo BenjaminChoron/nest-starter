@@ -127,5 +127,12 @@
       "prettier --write",
       "eslint --fix"
     ]
+  },
+  "pnpm": {
+    "overrides": {
+      "glob": ">=10.5.0",
+      "jws": ">=3.2.3",
+      "html-minifier": "npm:html-minifier-terser@^7.2.0"
+    }
   }
 }
