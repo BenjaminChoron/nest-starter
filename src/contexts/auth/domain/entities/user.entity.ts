@@ -7,7 +7,7 @@ export class User extends AggregateRoot {
     private readonly _id: string,
     private readonly _email: Email,
     private _password: Password,
-    private readonly _roles: string[] = ['user'],
+    private _roles: string[] = ['user'],
     private _isEmailVerified: boolean = false,
     private _verificationToken: string | null = null,
     private _verificationTokenExpiresAt: Date | null = null,
@@ -110,6 +110,10 @@ export class User extends AggregateRoot {
       return false;
     }
     return this._passwordResetTokenExpiresAt > new Date();
+  }
+
+  updateRoles(roles: string[]): void {
+    this._roles = [...roles];
   }
 
   toJSON() {

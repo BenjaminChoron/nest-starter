@@ -11,4 +11,5 @@ export interface IUserRepository {
   findByRefreshToken(token: string): Promise<User | null>;
   findByPasswordResetToken(token: string): Promise<User | null>;
   findAll(): Promise<User[]>;
+  count(): Promise<number>;
 }

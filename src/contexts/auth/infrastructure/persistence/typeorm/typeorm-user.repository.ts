@@ -71,4 +71,8 @@ export class TypeOrmUserRepository implements IUserRepository {
     }
     return userEntity.toDomain();
   }
+
+  async count(): Promise<number> {
+    return this.userRepository.count();
+  }
 }

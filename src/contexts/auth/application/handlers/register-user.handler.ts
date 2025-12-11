@@ -26,9 +26,13 @@ export class RegisterUserHandler implements ICommandHandler<RegisterUserCommand>
       throw new UserAlreadyExistsException(email);
     }
 
+    // Check if this is the first user (superAdmin)
+    const userCount = await this.userRepository.count();
+    const roles = userCount === 0 ? ['superAdmin'] : ['user'];
+
     const userId = randomUUID();
     const passwordVO = await Password.create(password);
-    const user = new User(userId, emailVO, passwordVO);
+    const user = new User(userId, emailVO, passwordVO, roles);
 
     // Generate verification token
     const verificationToken = randomUUID();
