@@ -27,6 +27,7 @@ import { ResetPasswordHandler } from './application/handlers/reset-password.hand
 import { InviteUserHandler } from './application/handlers/invite-user.handler';
 import { UserInvitationSaga } from './application/sagas/user-invitation.saga';
 import { CompleteProfileHandler } from './application/handlers/complete-profile.handler';
+import { UpdateUserRoleHandler } from './application/handlers/update-user-role.handler';
 import { UserModule } from '../user/user.module';
 
 const commandHandlers = [
@@ -39,6 +40,7 @@ const commandHandlers = [
   ResetPasswordHandler,
   InviteUserHandler,
   CompleteProfileHandler,
+  UpdateUserRoleHandler,
 ];
 const strategies = [LocalStrategy, JwtStrategy, RefreshTokenStrategy];
 const guards = [LocalAuthGuard, JwtAuthGuard, RefreshTokenGuard];
