@@ -72,6 +72,16 @@ export class TypeOrmUserRepository implements IUserRepository {
     return userEntity.toDomain();
   }
 
+  async findByProfileCreationToken(token: string): Promise<User | null> {
+    const userEntity = await this.userRepository.findOne({
+      where: { profileCreationToken: token },
+    });
+    if (!userEntity) {
+      return null;
+    }
+    return userEntity.toDomain();
+  }
+
   async count(): Promise<number> {
     return this.userRepository.count();
   }

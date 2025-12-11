@@ -10,6 +10,7 @@ export interface IUserRepository {
   findByVerificationToken(token: string): Promise<User | null>;
   findByRefreshToken(token: string): Promise<User | null>;
   findByPasswordResetToken(token: string): Promise<User | null>;
+  findByProfileCreationToken(token: string): Promise<User | null>;
   findAll(): Promise<User[]>;
   count(): Promise<number>;
 }

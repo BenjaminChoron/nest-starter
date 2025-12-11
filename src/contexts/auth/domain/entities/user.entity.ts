@@ -15,6 +15,8 @@ export class User extends AggregateRoot {
     private _refreshTokenExpiresAt: Date | null = null,
     private _passwordResetToken: string | null = null,
     private _passwordResetTokenExpiresAt: Date | null = null,
+    private _profileCreationToken: string | null = null,
+    private _profileCreationTokenExpiresAt: Date | null = null,
   ) {
     super();
   }
@@ -57,6 +59,14 @@ export class User extends AggregateRoot {
 
   get passwordResetTokenExpiresAt(): Date | null {
     return this._passwordResetTokenExpiresAt;
+  }
+
+  get profileCreationToken(): string | null {
+    return this._profileCreationToken;
+  }
+
+  get profileCreationTokenExpiresAt(): Date | null {
+    return this._profileCreationTokenExpiresAt;
   }
 
   setVerificationToken(token: string, expiresAt: Date): void {
@@ -110,6 +120,23 @@ export class User extends AggregateRoot {
       return false;
     }
     return this._passwordResetTokenExpiresAt > new Date();
+  }
+
+  setProfileCreationToken(token: string, expiresAt: Date): void {
+    this._profileCreationToken = token;
+    this._profileCreationTokenExpiresAt = expiresAt;
+  }
+
+  clearProfileCreationToken(): void {
+    this._profileCreationToken = null;
+    this._profileCreationTokenExpiresAt = null;
+  }
+
+  isProfileCreationTokenValid(): boolean {
+    if (!this._profileCreationToken || !this._profileCreationTokenExpiresAt) {
+      return false;
+    }
+    return this._profileCreationTokenExpiresAt > new Date();
   }
 
   updateRoles(roles: string[]): void {
