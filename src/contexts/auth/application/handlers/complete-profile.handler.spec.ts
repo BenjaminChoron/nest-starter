@@ -90,14 +90,17 @@ describe('CompleteProfileHandler', () => {
   describe('execute', () => {
     it('should complete profile successfully', async () => {
       // Arrange
+      const setPasswordMock = jest.fn().mockResolvedValue(undefined);
+      const verifyMock = jest.fn();
+      const clearProfileCreationTokenMock = jest.fn();
       const mockAuthUser = {
         id: 'user-id',
         email: 'test@example.com',
         roles: ['user'],
         isProfileCreationTokenValid: jest.fn().mockReturnValue(true),
-        setPassword: jest.fn().mockResolvedValue(undefined),
-        verify: jest.fn(),
-        clearProfileCreationToken: jest.fn(),
+        setPassword: setPasswordMock,
+        verify: verifyMock,
+        clearProfileCreationToken: clearProfileCreationTokenMock,
       } as unknown as AuthUser;
 
       const findByProfileCreationToken = jest.fn().mockResolvedValue(mockAuthUser);
