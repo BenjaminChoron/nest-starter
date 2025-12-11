@@ -4,6 +4,7 @@ import { IsEmail, IsString, IsObject, IsEnum } from 'class-validator';
 enum TemplateType {
   VERIFICATION = 'email-verification-template',
   PASSWORD_RESET = 'password-reset-template',
+  PROFILE_CREATION = 'profile-creation-template',
 }
 
 interface EmailContext {

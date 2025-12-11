@@ -30,7 +30,9 @@ export class MailController {
     schema: {
       example: {
         statusCode: 400,
-        message: ['Template must be one of the following: email-verification-template, password-reset-template'],
+        message: [
+          'Template must be one of the following: email-verification-template, password-reset-template, profile-creation-template',
+        ],
         error: 'Bad Request',
       },
     },

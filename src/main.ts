@@ -31,20 +31,37 @@ async function bootstrap() {
 A modern REST API built with NestJS, implementing Domain-Driven Design (DDD) and CQRS patterns.
 
 ## Features
-- Authentication with JWT
+- Authentication with JWT and refresh tokens
 - Email verification
-- User management
-- Role-based access control
+- User management with role-based access control
+- SuperAdmin role system (first user is automatically SuperAdmin)
+- User invitation system (SuperAdmin can invite users)
+- Profile completion flow
+- Role management (SuperAdmin can update user roles)
 - PostgreSQL database
 - Swagger API documentation
+
+## Roles
+The system supports three roles:
+- **superAdmin**: The first user created automatically receives this role. Only superAdmin can invite users and change user roles.
+- **admin**: Can access admin-only endpoints
+- **user**: Standard user role
 
 ## CSRF Protection
 This API uses CSRF protection mechanisms. To get a CSRF token, make a GET request to /csrf
 
 ## Authentication
 Most endpoints require Bearer token authentication. To get a token:
-1. Login with credentials (/auth/login)
-2. Use the returned token in the Authorization header
+1. Register a new user (/auth/register) - First user becomes superAdmin
+2. Verify email (/auth/verify?token=...)
+3. Login with credentials (/auth/login)
+4. Use the returned token in the Authorization header
+
+## User Invitation Flow (SuperAdmin Only)
+1. SuperAdmin invites a user via POST /auth/invite-user (provides email and role)
+2. User receives email with profile creation link
+3. User completes profile via POST /auth/complete-profile?token=...
+4. User can now login with their credentials
     `,
     )
     .setVersion('1.0')

@@ -13,6 +13,9 @@ A modern, well-structured NestJS starter template with best practices and essent
 - 🚀 Built with [NestJS](https://nestjs.com/) v11
 - 📦 PNPM for fast, disk-efficient package management
 - 🔒 Authentication ready with JWT and Passport strategies
+- 👑 Role-based access control (superAdmin, admin, user)
+- 🎫 User invitation system (SuperAdmin can invite users)
+- 📧 Email verification and profile creation workflows
 - 🛡️ Comprehensive security features with CSRF protection
 - 🔐 Rate limiting and brute force protection
 - 🗃️ PostgreSQL database with TypeORM integration
@@ -134,6 +137,7 @@ The project uses environment variables for configuration. Required variables inc
 - `SMTP_FROM` - Default "from" email address
 - `SMTP_USER` - SMTP username
 - `SMTP_PASS` - SMTP password
+- `FRONTEND_URL` - Frontend URL for email links (e.g., http://localhost:4200)
 
 #### Cloudinary Configuration
 
@@ -188,24 +192,61 @@ The authentication system includes:
 - Local strategy for username/password login
 - Password hashing with bcrypt
 - Protected routes with Guards
-- Role-based access control
+- Role-based access control (superAdmin, admin, user)
 - CSRF protection for all mutating requests
 - Rate limiting to prevent brute force attacks
 
-Authentication flow:
+#### Roles
 
-1. User logs in with credentials
-2. Server provides access token and refresh token
-3. Access token is used for API requests
-4. When access token expires, refresh token can be used to obtain new tokens
-5. On logout, user's refresh token is invalidated
+The system supports three roles:
 
-Available endpoints:
+- **superAdmin**: The first user created in the database automatically receives this role. SuperAdmin has exclusive privileges:
+  - Can invite new users (provides email and role)
+  - Can update user roles (admin/user only)
+  - Cannot have their role modified
+- **admin**: Can access admin-only endpoints (e.g., get all users)
+- **user**: Standard user role with basic access
 
+#### Authentication Flow
+
+**Standard Registration:**
+1. User registers with email and password (`POST /auth/register`)
+2. First user automatically becomes superAdmin
+3. User receives verification email
+4. User verifies email (`GET /auth/verify?token=...`)
+5. User logs in (`POST /auth/login`)
+6. Server provides access token and refresh token
+7. Access token is used for API requests
+8. When access token expires, refresh token can be used to obtain new tokens (`POST /auth/refresh`)
+9. On logout, user's refresh token is invalidated (`POST /auth/logout`)
+
+**User Invitation Flow (SuperAdmin Only):**
+1. SuperAdmin invites a user (`POST /auth/invite-user`) with email and role (admin/user)
+2. System creates user account with temporary password
+3. User receives email with profile creation link (token expires in 7 days)
+4. User completes profile (`POST /auth/complete-profile?token=...`) with:
+   - Password
+   - First name
+   - Last name
+   - Optional: profile picture, phone, address
+5. Email is automatically verified
+6. User can now login with their credentials
+
+#### Available Endpoints
+
+**Authentication:**
+- POST `/auth/register` - Register a new user (first user becomes superAdmin)
 - POST `/auth/login` - Authenticate user and receive tokens
+- GET `/auth/verify` - Verify email address
 - POST `/auth/refresh` - Get new access token using refresh token
 - POST `/auth/logout` - Invalidate refresh token
 - GET `/auth/me` - Get current user profile
+- POST `/auth/password-reset/request` - Request password reset
+- POST `/auth/password-reset` - Reset password with token
+
+**SuperAdmin Only:**
+- POST `/auth/invite-user` - Invite a new user (requires superAdmin)
+- PATCH `/users/:id/role` - Update user roles (requires superAdmin)
 
 ### Security Features
 
@@ -303,7 +344,11 @@ To use the Postman collection:
 
 The collection includes:
 
-- Authentication endpoints (register, login)
+- Authentication endpoints (register, login, verify email)
+- User invitation endpoints (SuperAdmin only)
+- Profile completion endpoints
+- User management endpoints
+- Role management endpoints
 - Automatic access token management
 - CSRF token handling and validation
 - Environment variable handling
