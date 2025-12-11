@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MulterModule } from '@nestjs/platform-express';
@@ -24,7 +24,7 @@ const Sagas = [UserRegistrationSaga];
   imports: [
     CqrsModule,
     TypeOrmModule.forFeature([UserEntity]),
-    AuthModule,
+    forwardRef(() => AuthModule),
     SharedModule,
     MulterModule.register({
       storage: memoryStorage(),

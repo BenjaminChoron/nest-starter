@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
@@ -51,7 +51,7 @@ const sagas = [EmailVerificationSaga, UserInvitationSaga];
     CqrsModule,
     PassportModule,
     SharedModule,
-    UserModule,
+    forwardRef(() => UserModule),
     TypeOrmModule.forFeature([UserEntity]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
