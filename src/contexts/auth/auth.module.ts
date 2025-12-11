@@ -24,6 +24,8 @@ import { UserEntity } from './infrastructure/persistence/typeorm/user.entity';
 import { SharedModule } from '../shared/shared.module';
 import { RequestPasswordResetHandler } from './application/handlers/request-password-reset.handler';
 import { ResetPasswordHandler } from './application/handlers/reset-password.handler';
+import { InviteUserHandler } from './application/handlers/invite-user.handler';
+import { UserInvitationSaga } from './application/sagas/user-invitation.saga';
 
 const commandHandlers = [
   RegisterUserHandler,
@@ -33,10 +35,11 @@ const commandHandlers = [
   VerifyEmailHandler,
   RequestPasswordResetHandler,
   ResetPasswordHandler,
+  InviteUserHandler,
 ];
 const strategies = [LocalStrategy, JwtStrategy, RefreshTokenStrategy];
 const guards = [LocalAuthGuard, JwtAuthGuard, RefreshTokenGuard];
-const sagas = [EmailVerificationSaga];
+const sagas = [EmailVerificationSaga, UserInvitationSaga];
 
 @Module({
   imports: [

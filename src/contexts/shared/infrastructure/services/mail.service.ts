@@ -51,4 +51,17 @@ export class MailService {
       },
     });
   }
+
+  async sendProfileCreationEmail(to: string, profileCreationToken: string) {
+    const profileCreationLink = `${process.env.FRONTEND_URL}/complete-profile?token=${profileCreationToken}`;
+
+    await this.sendEmail({
+      to,
+      subject: 'Profile Creation Invitation',
+      template: 'profile-creation-template',
+      context: {
+        profileCreationLink,
+      },
+    });
+  }
 }
