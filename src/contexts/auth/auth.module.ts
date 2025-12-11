@@ -26,6 +26,8 @@ import { RequestPasswordResetHandler } from './application/handlers/request-pass
 import { ResetPasswordHandler } from './application/handlers/reset-password.handler';
 import { InviteUserHandler } from './application/handlers/invite-user.handler';
 import { UserInvitationSaga } from './application/sagas/user-invitation.saga';
+import { CompleteProfileHandler } from './application/handlers/complete-profile.handler';
+import { UserModule } from '../user/user.module';
 
 const commandHandlers = [
   RegisterUserHandler,
@@ -36,6 +38,7 @@ const commandHandlers = [
   RequestPasswordResetHandler,
   ResetPasswordHandler,
   InviteUserHandler,
+  CompleteProfileHandler,
 ];
 const strategies = [LocalStrategy, JwtStrategy, RefreshTokenStrategy];
 const guards = [LocalAuthGuard, JwtAuthGuard, RefreshTokenGuard];
@@ -46,6 +49,7 @@ const sagas = [EmailVerificationSaga, UserInvitationSaga];
     CqrsModule,
     PassportModule,
     SharedModule,
+    UserModule,
     TypeOrmModule.forFeature([UserEntity]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
