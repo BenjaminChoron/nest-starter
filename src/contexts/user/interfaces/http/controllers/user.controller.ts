@@ -1,4 +1,15 @@
-import { Body, Controller, Get, Param, Post, Put, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Put,
+  UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  Patch,
+} from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import {
   ApiTags,
@@ -17,6 +28,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from 'src/contexts/auth/interfaces/http/guards/jwt-auth.guard';
 import { CustomThrottlerGuard } from '../../../../shared/infrastructure/guards/throttler.guard';
 import { AdminGuard } from '../../../../shared/infrastructure/guards/admin.guard';
+import { SuperAdminGuard } from '../../../../shared/infrastructure/guards/super-admin.guard';
 import { CreateUserCommand } from '../../../application/commands/create-user.command';
 import { UpdateUserProfileCommand } from '../../../application/commands/update-user-profile.command';
 import { GetUserByIdQuery } from '../../../application/queries/get-user-by-id.query';
@@ -25,7 +37,9 @@ import { User } from '../../../domain/user.entity';
 import { CreateUserDto } from '../dtos/create-user.dto';
 import { UpdateUserProfileDto } from '../dtos/update-user-profile.dto';
 import { UserResponseDto } from '../dtos/user-response.dto';
+import { UpdateUserRoleDto } from '../dtos/update-user-role.dto';
 import { CloudinaryService } from '../../../../shared/infrastructure/services/cloudinary.service';
+import { UpdateUserRoleCommand } from '../../../../auth/application/commands/update-user-role.command';
 
 @ApiTags('Users')
 @Controller('users')
@@ -209,5 +223,45 @@ export class UserController {
       file,
     );
     await this.commandBus.execute(command);
+  }
+
+  @UseGuards(CustomThrottlerGuard, JwtAuthGuard, SuperAdminGuard)
+  @Patch(':id/role')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Update user role',
+    description: 'SuperAdmin can update user roles. Only "admin" and "user" roles can be assigned.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'User ID (UUID)',
+    required: true,
+    type: 'string',
+  })
+  @ApiBody({ type: UpdateUserRoleDto })
+  @ApiOkResponse({
+    description: 'User role updated successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        message: {
+          type: 'string',
+          example: 'User role updated successfully',
+        },
+      },
+    },
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Invalid or expired JWT token or insufficient permissions (SuperAdmin required)',
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid input - invalid roles or attempting to modify superAdmin role',
+  })
+  @ApiNotFoundResponse({
+    description: 'User not found',
+  })
+  async updateUserRole(@Param('id') id: string, @Body() dto: UpdateUserRoleDto): Promise<{ message: string }> {
+    await this.commandBus.execute(new UpdateUserRoleCommand(id, dto.roles));
+    return { message: 'User role updated successfully' };
   }
 }
