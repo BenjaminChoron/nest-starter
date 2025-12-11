@@ -27,6 +27,8 @@ interface UserSeedData {
   refreshTokenExpiresAt: Date | null;
   passwordResetToken: string | null;
   passwordResetTokenExpiresAt: Date | null;
+  profileCreationToken: string | null;
+  profileCreationTokenExpiresAt: Date | null;
 }
 
 const SEED_USERS: UserSeedData[] = [
@@ -47,6 +49,8 @@ const SEED_USERS: UserSeedData[] = [
     refreshTokenExpiresAt: null,
     passwordResetToken: null,
     passwordResetTokenExpiresAt: null,
+    profileCreationToken: null,
+    profileCreationTokenExpiresAt: null,
   },
   {
     id: v4(),
@@ -65,6 +69,8 @@ const SEED_USERS: UserSeedData[] = [
     refreshTokenExpiresAt: null,
     passwordResetToken: null,
     passwordResetTokenExpiresAt: null,
+    profileCreationToken: null,
+    profileCreationTokenExpiresAt: null,
   },
   {
     id: v4(),
@@ -83,6 +89,8 @@ const SEED_USERS: UserSeedData[] = [
     refreshTokenExpiresAt: null,
     passwordResetToken: null,
     passwordResetTokenExpiresAt: null,
+    profileCreationToken: null,
+    profileCreationTokenExpiresAt: null,
   },
 ];
 
@@ -122,6 +130,8 @@ async function seed(): Promise<void> {
           refreshTokenExpiresAt: userData.refreshTokenExpiresAt ?? null,
           passwordResetToken: userData.passwordResetToken ?? null,
           passwordResetTokenExpiresAt: userData.passwordResetTokenExpiresAt ?? null,
+          profileCreationToken: userData.profileCreationToken ?? null,
+          profileCreationTokenExpiresAt: userData.profileCreationTokenExpiresAt ?? null,
         };
       }),
     );
