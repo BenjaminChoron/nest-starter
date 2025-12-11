@@ -322,6 +322,285 @@ describe('Auth E2E Tests', () => {
     });
   });
 
+  describe('SuperAdmin Role Assignment', () => {
+    it('should assign superAdmin role to the first registered user', async () => {
+      // Clear database
+      await TestHelper.clearDatabase();
+
+      // Register first user
+      await request(httpServer).post('/auth/register').send({
+        email: 'first@example.com',
+        password: 'First123!',
+      });
+
+      // Check user has superAdmin role
+      const firstUser = await authUserRepository.findOne({ where: { email: 'first@example.com' } });
+      expect(firstUser).toBeDefined();
+      expect(firstUser?.roles).toContain('superAdmin');
+    });
+
+    it('should assign user role to subsequent registered users', async () => {
+      // Clear database
+      await TestHelper.clearDatabase();
+
+      // Register first user (superAdmin)
+      await request(httpServer).post('/auth/register').send({
+        email: 'first@example.com',
+        password: 'First123!',
+      });
+
+      // Register second user
+      await request(httpServer).post('/auth/register').send({
+        email: 'second@example.com',
+        password: 'Second123!',
+      });
+
+      // Check second user has user role
+      const secondUser = await authUserRepository.findOne({ where: { email: 'second@example.com' } });
+      expect(secondUser).toBeDefined();
+      expect(secondUser?.roles).toEqual(['user']);
+      expect(secondUser?.roles).not.toContain('superAdmin');
+    });
+  });
+
+  describe('User Invitation Flow', () => {
+    let superAdminToken: string;
+
+    beforeEach(async () => {
+      // Clear database
+      await TestHelper.clearDatabase();
+
+      // Register first user (becomes superAdmin)
+      await request(httpServer).post('/auth/register').send({
+        email: 'superadmin@example.com',
+        password: 'SuperAdmin123!',
+      });
+
+      // Verify email
+      const superAdminUser = await authUserRepository.findOne({ where: { email: 'superadmin@example.com' } });
+      if (!superAdminUser || !superAdminUser.verificationToken) {
+        throw new Error('SuperAdmin user not found');
+      }
+      await request(httpServer).get(`/auth/verify?token=${superAdminUser.verificationToken}`).expect(200);
+
+      // Login as superAdmin
+      const loginResponse = await request(httpServer).post('/auth/login').send({
+        email: 'superadmin@example.com',
+        password: 'SuperAdmin123!',
+      });
+      const loginBody = loginResponse.body as LoginResponseDto;
+      superAdminToken = loginBody.access_token;
+    });
+
+    it('should allow superAdmin to invite a new user', async () => {
+      const inviteResponse = await request(httpServer)
+        .post('/auth/invite-user')
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({
+          email: 'invited@example.com',
+          role: 'admin',
+        })
+        .expect(201);
+
+      const inviteBody = inviteResponse.body as MessageResponse;
+      expect(inviteBody).toHaveProperty('message');
+      expect(inviteBody.message).toContain('invitation sent successfully');
+
+      // Check user was created
+      const invitedUser = await authUserRepository.findOne({ where: { email: 'invited@example.com' } });
+      expect(invitedUser).toBeDefined();
+      expect(invitedUser?.roles).toEqual(['admin']);
+      expect(invitedUser?.profileCreationToken).toBeDefined();
+    });
+
+    it('should deny non-superAdmin users from inviting users', async () => {
+      // Register a regular user
+      await request(httpServer).post('/auth/register').send({
+        email: 'regular@example.com',
+        password: 'Regular123!',
+      });
+
+      const regularUser = await authUserRepository.findOne({ where: { email: 'regular@example.com' } });
+      if (!regularUser || !regularUser.verificationToken) {
+        throw new Error('Regular user not found');
+      }
+      await request(httpServer).get(`/auth/verify?token=${regularUser.verificationToken}`).expect(200);
+
+      const loginResponse = await request(httpServer).post('/auth/login').send({
+        email: 'regular@example.com',
+        password: 'Regular123!',
+      });
+      const loginBody = loginResponse.body as LoginResponseDto;
+      const regularToken = loginBody.access_token;
+
+      // Try to invite user
+      await request(httpServer)
+        .post('/auth/invite-user')
+        .set('Authorization', `Bearer ${regularToken}`)
+        .send({
+          email: 'invited@example.com',
+          role: 'user',
+        })
+        .expect(401);
+    });
+
+    it('should allow invited user to complete profile', async () => {
+      // Invite user
+      await request(httpServer)
+        .post('/auth/invite-user')
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({
+          email: 'invited@example.com',
+          role: 'user',
+        })
+        .expect(201);
+
+      // Get profile creation token
+      const invitedUser = await authUserRepository.findOne({ where: { email: 'invited@example.com' } });
+      if (!invitedUser || !invitedUser.profileCreationToken) {
+        throw new Error('Invited user not found or token missing');
+      }
+
+      // Complete profile
+      const completeResponse = await request(httpServer)
+        .post(`/auth/complete-profile?token=${invitedUser.profileCreationToken}`)
+        .send({
+          password: 'NewPassword123!',
+          firstName: 'Invited',
+          lastName: 'User',
+          phone: '+1234567890',
+          address: '123 Test St',
+        })
+        .expect(200);
+
+      const completeBody = completeResponse.body as MessageResponse;
+      expect(completeBody).toHaveProperty('message');
+      expect(completeBody.message).toContain('Profile created successfully');
+
+      // Verify user can now login
+      const loginResponse = await request(httpServer).post('/auth/login').send({
+        email: 'invited@example.com',
+        password: 'NewPassword123!',
+      });
+      expect(loginResponse.status).toBe(200);
+    });
+
+    it('should reject profile completion with invalid token', async () => {
+      await request(httpServer)
+        .post('/auth/complete-profile?token=invalid-token')
+        .send({
+          password: 'NewPassword123!',
+          firstName: 'Test',
+          lastName: 'User',
+        })
+        .expect(404);
+    });
+  });
+
+  describe('Role Management', () => {
+    let superAdminToken: string;
+    let regularUserId: string;
+
+    beforeEach(async () => {
+      // Clear database
+      await TestHelper.clearDatabase();
+
+      // Register superAdmin
+      await request(httpServer).post('/auth/register').send({
+        email: 'superadmin@example.com',
+        password: 'SuperAdmin123!',
+      });
+
+      const superAdminUser = await authUserRepository.findOne({ where: { email: 'superadmin@example.com' } });
+      if (!superAdminUser || !superAdminUser.verificationToken) {
+        throw new Error('SuperAdmin user not found');
+      }
+      await request(httpServer).get(`/auth/verify?token=${superAdminUser.verificationToken}`).expect(200);
+
+      const loginResponse = await request(httpServer).post('/auth/login').send({
+        email: 'superadmin@example.com',
+        password: 'SuperAdmin123!',
+      });
+      const loginBody = loginResponse.body as LoginResponseDto;
+      superAdminToken = loginBody.access_token;
+
+      // Register regular user
+      await request(httpServer).post('/auth/register').send({
+        email: 'regular@example.com',
+        password: 'Regular123!',
+      });
+
+      const regularUser = await authUserRepository.findOne({ where: { email: 'regular@example.com' } });
+      if (!regularUser || !regularUser.verificationToken) {
+        throw new Error('Regular user not found');
+      }
+      await request(httpServer).get(`/auth/verify?token=${regularUser.verificationToken}`).expect(200);
+      regularUserId = regularUser.id;
+    });
+
+    it('should allow superAdmin to update user role', async () => {
+      const updateResponse = await request(httpServer)
+        .patch(`/users/${regularUserId}/role`)
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({
+          roles: ['admin'],
+        })
+        .expect(200);
+
+      const updateBody = updateResponse.body as MessageResponse;
+      expect(updateBody).toHaveProperty('message');
+      expect(updateBody.message).toContain('role updated successfully');
+
+      // Verify role was updated
+      const updatedUser = await authUserRepository.findOne({ where: { id: regularUserId } });
+      expect(updatedUser?.roles).toEqual(['admin']);
+    });
+
+    it('should deny non-superAdmin users from updating roles', async () => {
+      // Login as regular user
+      const loginResponse = await request(httpServer).post('/auth/login').send({
+        email: 'regular@example.com',
+        password: 'Regular123!',
+      });
+      const loginBody = loginResponse.body as LoginResponseDto;
+      const regularToken = loginBody.access_token;
+
+      // Try to update role
+      await request(httpServer)
+        .patch(`/users/${regularUserId}/role`)
+        .set('Authorization', `Bearer ${regularToken}`)
+        .send({
+          roles: ['admin'],
+        })
+        .expect(401);
+    });
+
+    it('should prevent updating superAdmin role', async () => {
+      const superAdminUser = await authUserRepository.findOne({ where: { email: 'superadmin@example.com' } });
+      if (!superAdminUser) {
+        throw new Error('SuperAdmin user not found');
+      }
+
+      await request(httpServer)
+        .patch(`/users/${superAdminUser.id}/role`)
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({
+          roles: ['admin'],
+        })
+        .expect(400);
+    });
+
+    it('should reject invalid roles', async () => {
+      await request(httpServer)
+        .patch(`/users/${regularUserId}/role`)
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({
+          roles: ['superAdmin'],
+        })
+        .expect(400);
+    });
+  });
+
   describe('Role-Based Access Control', () => {
     let adminToken: string;
     let userToken: string;
@@ -330,24 +609,67 @@ describe('Auth E2E Tests', () => {
       // Clear database before each test
       await TestHelper.clearDatabase();
 
-      // Register and verify admin user
-      const adminRegisterResponse = await request(httpServer).post('/auth/register').send({
+      // Register first user (becomes superAdmin)
+      await request(httpServer).post('/auth/register').send({
+        email: 'superadmin@example.com',
+        password: 'SuperAdmin123!',
+      });
+
+      const superAdminUser = await authUserRepository.findOne({ where: { email: 'superadmin@example.com' } });
+      if (!superAdminUser || !superAdminUser.verificationToken) {
+        throw new Error('SuperAdmin user not found');
+      }
+      await request(httpServer).get(`/auth/verify?token=${superAdminUser.verificationToken}`).expect(200);
+
+      const superAdminLoginResponse = await request(httpServer).post('/auth/login').send({
+        email: 'superadmin@example.com',
+        password: 'SuperAdmin123!',
+      });
+      const superAdminLoginBody = superAdminLoginResponse.body as LoginResponseDto;
+      const superAdminToken = superAdminLoginBody.access_token;
+
+      // Create admin user via invitation
+      await request(httpServer).post('/auth/invite-user').set('Authorization', `Bearer ${superAdminToken}`).send({
         email: 'admin@example.com',
+        role: 'admin',
+      });
+
+      const adminUser = await authUserRepository.findOne({ where: { email: 'admin@example.com' } });
+      if (!adminUser || !adminUser.profileCreationToken) {
+        throw new Error('Admin user not found');
+      }
+
+      await request(httpServer).post(`/auth/complete-profile?token=${adminUser.profileCreationToken}`).send({
         password: 'Admin123!',
         firstName: 'Admin',
         lastName: 'User',
       });
-      expect(adminRegisterResponse.status).toBe(201);
 
-      // Get admin verification token and verify email
-      const adminUser = await authUserRepository.findOne({ where: { email: 'admin@example.com' } });
-      if (!adminUser || !adminUser.verificationToken) {
-        throw new Error('Admin user not found or verification token missing');
+      // Login as admin
+      const adminLoginResponse = await request(httpServer).post('/auth/login').send({
+        email: 'admin@example.com',
+        password: 'Admin123!',
+      });
+      const adminLoginBody = adminLoginResponse.body as LoginResponseDto;
+      adminToken = adminLoginBody.access_token;
+
+      // Register and verify regular user
+      const userRegisterResponse = await request(httpServer).post('/auth/register').send({
+        email: 'user@example.com',
+        password: 'User123!',
+        firstName: 'Regular',
+        lastName: 'User',
+      });
+      expect(userRegisterResponse.status).toBe(201);
+
+      // Get user verification token and verify email
+      const regularUser = await authUserRepository.findOne({ where: { email: 'user@example.com' } });
+      if (!regularUser || !regularUser.verificationToken) {
+        throw new Error('Regular user not found or verification token missing');
       }
 
-      // Verify email and set admin role
-      await request(httpServer).get(`/auth/verify?token=${adminUser.verificationToken}`).expect(200);
-      await authUserRepository.update(adminUser.id, { roles: ['admin'] });
+      // Verify email
+      await request(httpServer).get(`/auth/verify?token=${regularUser.verificationToken}`).expect(200);
 
       // Login as admin
       const adminLoginResponse = await request(httpServer).post('/auth/login').send({

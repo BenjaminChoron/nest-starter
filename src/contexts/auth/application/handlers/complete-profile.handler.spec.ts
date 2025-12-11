@@ -203,6 +203,11 @@ describe('CompleteProfileHandler', () => {
       await handler.execute(command);
 
       // Assert
+      expect(findByProfileCreationToken).toHaveBeenCalledWith(mockToken);
+      expect(setPasswordMock).toHaveBeenCalledWith(mockPassword);
+      expect(verifyMock).toHaveBeenCalled();
+      expect(clearProfileCreationTokenMock).toHaveBeenCalled();
+      expect(saveAuthUser).toHaveBeenCalled();
       expect(saveProfile).toHaveBeenCalled();
     });
   });
