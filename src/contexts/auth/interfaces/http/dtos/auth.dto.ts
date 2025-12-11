@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsString, Matches, MaxLength, MinLength } from 'class-validator';
+import { IsEmail, IsString, Matches, MaxLength, MinLength, IsEnum, IsOptional, IsNotEmpty } from 'class-validator';
 
 export interface JwtPayload {
   sub: string;
@@ -117,4 +117,73 @@ export class ResetPasswordDto {
       'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&)',
   })
   password: string;
+}
+
+export class InviteUserDto {
+  @ApiProperty({ example: 'user@example.com' })
+  @IsEmail({}, { message: 'Please provide a valid email address' })
+  @IsNotEmpty()
+  email: string;
+
+  @ApiProperty({ example: 'admin', enum: ['admin', 'user'], description: 'User role' })
+  @IsEnum(['admin', 'user'], { message: 'Role must be either "admin" or "user"' })
+  @IsNotEmpty()
+  role: 'admin' | 'user';
+}
+
+export class InviteUserResponseDto {
+  @ApiProperty({
+    example: 'User invitation sent successfully. Please check your email for profile creation instructions.',
+  })
+  message: string;
+}
+
+export class CompleteProfileDto {
+  @ApiProperty({
+    example: 'StrongP@ss123',
+    description:
+      'Password must be 8-64 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character',
+  })
+  @IsString()
+  @MinLength(8, { message: 'Password must be at least 8 characters long' })
+  @MaxLength(64, { message: 'Password must not exceed 64 characters' })
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, {
+    message:
+      'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&)',
+  })
+  password: string;
+
+  @ApiProperty({ example: 'John' })
+  @IsString()
+  @IsNotEmpty()
+  firstName: string;
+
+  @ApiProperty({ example: 'Doe' })
+  @IsString()
+  @IsNotEmpty()
+  lastName: string;
+
+  @ApiPropertyOptional({ description: 'URL to user profile picture' })
+  @IsString()
+  @IsOptional()
+  @Matches(/^https?:\/\/.+/, { message: 'Profile picture must be a valid URL' })
+  profilePicture?: string;
+
+  @ApiPropertyOptional({ example: '+1234567890', description: 'User phone number' })
+  @IsString()
+  @IsOptional()
+  @Matches(/^\+?[\d\s-]{8,}$/, { message: 'Invalid phone number format' })
+  phone?: string;
+
+  @ApiPropertyOptional({ example: '123 Main St, City, Country', description: 'User address' })
+  @IsString()
+  @IsOptional()
+  address?: string;
+}
+
+export class CompleteProfileResponseDto {
+  @ApiProperty({
+    example: 'Profile created successfully. You can now log in.',
+  })
+  message: string;
 }

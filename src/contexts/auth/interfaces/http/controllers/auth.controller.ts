@@ -5,9 +5,12 @@ import { LoginUserCommand } from '../../../application/commands/login-user.comma
 import { VerifyEmailCommand } from '../../../application/commands/verify-email.command';
 import { RequestPasswordResetCommand } from '../../../application/commands/request-password-reset.command';
 import { ResetPasswordCommand } from '../../../application/commands/reset-password.command';
+import { InviteUserCommand } from '../../../application/commands/invite-user.command';
+import { CompleteProfileCommand } from '../../../application/commands/complete-profile.command';
 import { LocalAuthGuard } from '../guards/local-auth.guard';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { CustomThrottlerGuard } from '../../../../shared/infrastructure/guards/throttler.guard';
+import { SuperAdminGuard } from '../../../../shared/infrastructure/guards/super-admin.guard';
 import { GetUserByIdQuery } from '../../../../user/application/queries/get-user-by-id.query';
 import { User } from '../../../../user/domain/user.entity';
 import { RefreshTokenGuard } from '../guards/refresh-token.guard';
@@ -32,6 +35,10 @@ import {
   UserDto,
   RequestPasswordResetDto,
   ResetPasswordDto,
+  InviteUserDto,
+  InviteUserResponseDto,
+  CompleteProfileDto,
+  CompleteProfileResponseDto,
 } from '../dtos/auth.dto';
 import { LogoutUserCommand } from '../../../application/commands/logout-user.command';
 
@@ -262,5 +269,71 @@ export class AuthController {
   async resetPassword(@Query('token') token: string, @Body() dto: ResetPasswordDto): Promise<{ message: string }> {
     await this.commandBus.execute(new ResetPasswordCommand(token, dto.password));
     return { message: 'Password has been reset successfully' };
+  }
+
+  @UseGuards(CustomThrottlerGuard, JwtAuthGuard, SuperAdminGuard)
+  @Post('invite-user')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Invite a new user',
+    description:
+      'SuperAdmin can invite a new user by providing email and role. An email with profile creation link will be sent.',
+  })
+  @ApiBody({ type: InviteUserDto })
+  @ApiCreatedResponse({
+    type: InviteUserResponseDto,
+    description: 'User invitation sent successfully',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Invalid or expired JWT token or insufficient permissions (SuperAdmin required)',
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid input - email already exists or invalid role',
+  })
+  async inviteUser(@Body() dto: InviteUserDto): Promise<InviteUserResponseDto> {
+    await this.commandBus.execute(new InviteUserCommand(dto.email, dto.role));
+    return { message: 'User invitation sent successfully. Please check your email for profile creation instructions.' };
+  }
+
+  @UseGuards(CustomThrottlerGuard)
+  @Post('complete-profile')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Complete user profile',
+    description: 'Completes the user profile using the token received via email invitation.',
+  })
+  @ApiQuery({
+    name: 'token',
+    description: 'Profile creation token received via email',
+    required: true,
+  })
+  @ApiBody({ type: CompleteProfileDto })
+  @ApiOkResponse({
+    type: CompleteProfileResponseDto,
+    description: 'Profile created successfully',
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid or expired profile creation token',
+  })
+  @ApiNotFoundResponse({
+    description: 'User not found',
+  })
+  async completeProfile(
+    @Query('token') token: string,
+    @Body() dto: CompleteProfileDto,
+  ): Promise<CompleteProfileResponseDto> {
+    await this.commandBus.execute(
+      new CompleteProfileCommand(
+        token,
+        dto.password,
+        dto.firstName,
+        dto.lastName,
+        dto.profilePicture,
+        dto.phone,
+        dto.address,
+      ),
+    );
+    return { message: 'Profile created successfully. You can now log in.' };
   }
 }
