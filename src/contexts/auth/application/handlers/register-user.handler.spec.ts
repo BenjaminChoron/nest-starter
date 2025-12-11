@@ -37,6 +37,7 @@ describe('RegisterUserHandler', () => {
           useValue: {
             findByEmail: jest.fn(),
             save: jest.fn(),
+            count: jest.fn(),
           },
         },
         {
@@ -109,9 +110,11 @@ describe('RegisterUserHandler', () => {
       // Arrange
       const findByEmail = jest.fn().mockResolvedValue(null);
       const save = jest.fn<Promise<void>, [User]>();
+      const count = jest.fn().mockResolvedValue(1);
 
       userRepository.findByEmail = findByEmail;
       userRepository.save = save;
+      userRepository.count = count;
 
       const command = new RegisterUserCommand(mockEmail, mockPassword);
 
@@ -133,6 +136,50 @@ describe('RegisterUserHandler', () => {
         const hoursDiff = Math.round((tokenExpiresAt.getTime() - now.getTime()) / (1000 * 60 * 60));
         expect(hoursDiff).toBe(24);
       }
+    });
+
+    it('should assign superAdmin role to the first user', async () => {
+      // Arrange
+      const findByEmail = jest.fn().mockResolvedValue(null);
+      const save = jest.fn<Promise<void>, [User]>();
+      const count = jest.fn().mockResolvedValue(0); // First user
+
+      userRepository.findByEmail = findByEmail;
+      userRepository.save = save;
+      userRepository.count = count;
+
+      const command = new RegisterUserCommand(mockEmail, mockPassword);
+
+      // Act
+      await handler.execute(command);
+
+      // Assert
+      expect(count).toHaveBeenCalled();
+      expect(save).toHaveBeenCalled();
+      const [savedUser] = save.mock.calls[0];
+      expect(savedUser.roles).toEqual(['superAdmin']);
+    });
+
+    it('should assign user role to subsequent users', async () => {
+      // Arrange
+      const findByEmail = jest.fn().mockResolvedValue(null);
+      const save = jest.fn<Promise<void>, [User]>();
+      const count = jest.fn().mockResolvedValue(1); // Not first user
+
+      userRepository.findByEmail = findByEmail;
+      userRepository.save = save;
+      userRepository.count = count;
+
+      const command = new RegisterUserCommand(mockEmail, mockPassword);
+
+      // Act
+      await handler.execute(command);
+
+      // Assert
+      expect(count).toHaveBeenCalled();
+      expect(save).toHaveBeenCalled();
+      const [savedUser] = save.mock.calls[0];
+      expect(savedUser.roles).toEqual(['user']);
     });
   });
 });
