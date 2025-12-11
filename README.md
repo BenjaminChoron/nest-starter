@@ -10,28 +10,62 @@ A modern, well-structured NestJS starter template with best practices and essent
 
 ## Features
 
+### Core Framework & Architecture
+
 - 🚀 Built with [NestJS](https://nestjs.com/) v11
 - 📦 PNPM for fast, disk-efficient package management
-- 🔒 Authentication ready with JWT and Passport strategies
+- 🏗️ CQRS architecture with domain-driven design
+- 🔄 Hot reload in development
+
+### Authentication & Authorization
+
+- 🔒 JWT-based authentication with Passport strategies
+- 🔄 Refresh token support with secure token rotation
 - 👑 Role-based access control (superAdmin, admin, user)
 - 🎫 User invitation system (SuperAdmin can invite users)
-- 📧 Email verification and profile creation workflows
-- 🛡️ Comprehensive security features with CSRF protection
-- 🔐 Rate limiting and brute force protection
-- 🗃️ PostgreSQL database with TypeORM integration
-- 📝 OpenAPI/Swagger documentation
-- 🏗️ CQRS architecture with domain-driven design
-- ✨ ESLint + Prettier for code quality
-- 🧪 Jest for testing
-- 🪝 Git hooks with Husky and lint-staged
-- 📋 Conventional commits with commitlint
-- 🔄 Hot reload in development
-- 🐳 Docker Compose for local development
-- 📧 Email integration with SMTP
+- 📧 Email verification workflow
+- 📝 Profile creation workflow for invited users
 - 🔐 Secure password hashing with bcrypt
-- 🔄 Continuous Integration with GitHub Actions
+
+### Security
+
+- 🛡️ CSRF protection with double-submit cookie pattern
+- 🔐 Rate limiting and brute force protection
+- 🔒 Secure HTTP headers with Helmet
+- 🚫 CORS protection with configurable origins
+- ✅ Input validation and sanitization
+
+### Database & Storage
+
+- 🗃️ PostgreSQL database with TypeORM integration
 - 🖼️ File uploads with Cloudinary integration
 - 🎨 Profile picture management with image optimization
+- 📊 Database migrations support
+
+### Email & Notifications
+
+- 📧 SMTP email integration
+- ✉️ Email templates (verification, password reset, profile creation)
+- 📨 Automated email workflows
+
+### Development Tools
+
+- ✨ ESLint + Prettier for code quality
+- 🪝 Git hooks with Husky and lint-staged
+- 📋 Conventional commits with commitlint
+- 🐳 Docker Compose for local development
+
+### Testing & CI/CD
+
+- 🧪 Jest for unit and integration testing
+- 🔄 Continuous Integration with GitHub Actions
+- 📊 Test coverage reporting
+
+### Documentation
+
+- 📝 OpenAPI/Swagger API documentation
+- 📚 Comprehensive README with examples
+- 🧪 Postman collection for API testing
 
 ## Prerequisites
 
@@ -210,6 +244,7 @@ The system supports three roles:
 #### Authentication Flow
 
 **Standard Registration:**
+
 1. User registers with email and password (`POST /auth/register`)
 2. First user automatically becomes superAdmin
 3. User receives verification email
@@ -221,6 +256,7 @@ The system supports three roles:
 9. On logout, user's refresh token is invalidated (`POST /auth/logout`)
 
 **User Invitation Flow (SuperAdmin Only):**
+
 1. SuperAdmin invites a user (`POST /auth/invite-user`) with email and role (admin/user)
 2. System creates user account with temporary password
 3. User receives email with profile creation link (token expires in 7 days)
@@ -235,6 +271,7 @@ The system supports three roles:
 #### Available Endpoints
 
 **Authentication:**
+
 - POST `/auth/register` - Register a new user (first user becomes superAdmin)
 - POST `/auth/login` - Authenticate user and receive tokens
 - GET `/auth/verify` - Verify email address
@@ -245,8 +282,18 @@ The system supports three roles:
 - POST `/auth/password-reset` - Reset password with token
 
 **SuperAdmin Only:**
+
 - POST `/auth/invite-user` - Invite a new user (requires superAdmin)
+- POST `/auth/complete-profile` - Complete user profile with token from invitation email
 - PATCH `/users/:id/role` - Update user roles (requires superAdmin)
+
+**User Management:**
+
+- POST `/users` - Create a new user profile (typically used internally)
+- GET `/users` - Get all users (requires admin role)
+- GET `/users/:id` - Get user by ID (requires authentication)
+- PUT `/users/:id` - Update user profile (requires authentication)
+- PUT `/users/:id/profile-picture` - Upload profile picture (requires authentication)
 
 ### Security Features
 
