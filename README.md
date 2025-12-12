@@ -238,6 +238,7 @@ The system supports three roles:
   - Can invite new users (provides email and role)
   - Can update user roles (admin/user only)
   - Cannot have their role modified
+  - **Can access all admin-only endpoints** (superAdmin can do everything admin can do)
 - **admin**: Can access admin-only endpoints (e.g., get all users)
 - **user**: Standard user role with basic access
 
@@ -290,7 +291,7 @@ The system supports three roles:
 **User Management:**
 
 - POST `/users` - Create a new user profile (typically used internally)
-- GET `/users` - Get all users (requires admin role)
+- GET `/users` - Get all users (requires admin or superAdmin role)
 - GET `/users/:id` - Get user by ID (requires authentication)
 - PUT `/users/:id` - Update user profile (requires authentication)
 - PUT `/users/:id/profile-picture` - Upload profile picture (requires authentication)

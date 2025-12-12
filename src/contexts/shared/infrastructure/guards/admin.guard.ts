@@ -8,7 +8,7 @@ export class AdminGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<Request & { user: JwtPayload }>();
     const user = request.user;
 
-    if (!user || !user.roles.includes('admin')) {
+    if (!user || (!user.roles.includes('admin') && !user.roles.includes('superAdmin'))) {
       throw new UnauthorizedException('Admin access required');
     }
 
