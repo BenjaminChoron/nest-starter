@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EventBus } from '@nestjs/cqrs';
+import { ConfigService } from '@nestjs/config';
 import { InviteUserHandler } from './invite-user.handler';
 import { InviteUserCommand } from '../commands/invite-user.command';
 import { IUserRepository, USER_REPOSITORY } from '../../domain/repositories/user.repository.interface';
@@ -43,6 +44,12 @@ describe('InviteUserHandler', () => {
           provide: EventBus,
           useValue: {
             publish: jest.fn(),
+          },
+        },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn().mockReturnValue(7), // PROFILE_CREATION_TOKEN_TTL_DAYS default
           },
         },
       ],

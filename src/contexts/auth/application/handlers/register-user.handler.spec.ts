@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EventBus } from '@nestjs/cqrs';
+import { ConfigService } from '@nestjs/config';
 import { RegisterUserHandler } from './register-user.handler';
 import { RegisterUserCommand } from '../commands/register-user.command';
 import { IUserRepository, USER_REPOSITORY } from '../../domain/repositories/user.repository.interface';
@@ -44,6 +45,12 @@ describe('RegisterUserHandler', () => {
           provide: EventBus,
           useValue: {
             publish: jest.fn(),
+          },
+        },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn().mockReturnValue(24), // EMAIL_VERIFICATION_TOKEN_TTL_HOURS default
           },
         },
       ],

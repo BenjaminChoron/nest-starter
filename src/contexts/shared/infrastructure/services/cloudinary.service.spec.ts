@@ -33,6 +33,13 @@ describe('CloudinaryService', () => {
           provide: ConfigService,
           useValue: {
             getOrThrow: jest.fn().mockImplementation((key: keyof typeof mockConfig) => mockConfig[key]),
+            get: jest.fn().mockImplementation((key: string, defaultValue?: unknown) => {
+              if (key === 'CLOUDINARY_DEFAULT_FOLDER') return defaultValue || 'profile-pictures';
+              if (key === 'CLOUDINARY_IMAGE_WIDTH') return defaultValue || 500;
+              if (key === 'CLOUDINARY_IMAGE_HEIGHT') return defaultValue || 500;
+              if (key === 'CLOUDINARY_IMAGE_QUALITY') return defaultValue || 'auto:good';
+              return defaultValue;
+            }),
           },
         },
       ],

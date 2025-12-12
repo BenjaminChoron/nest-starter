@@ -40,6 +40,7 @@ describe('LoginUserHandler', () => {
           provide: ConfigService,
           useValue: {
             getOrThrow: jest.fn(),
+            get: jest.fn(),
           },
         },
       ],
@@ -72,6 +73,7 @@ describe('LoginUserHandler', () => {
         .mockReturnValueOnce('1h') // JWT_ACCESS_TOKEN_TTL
         .mockReturnValueOnce('mock-refresh-secret') // JWT_REFRESH_SECRET
         .mockReturnValueOnce('7d'); // JWT_REFRESH_TOKEN_TTL
+      configService.get.mockReturnValue('7d'); // JWT_REFRESH_TOKEN_TTL for refresh token expiration calculation
 
       const command = new LoginUserCommand(email, password);
 
@@ -128,6 +130,7 @@ describe('LoginUserHandler', () => {
         .mockReturnValueOnce('1h') // JWT_ACCESS_TOKEN_TTL
         .mockReturnValueOnce('mock-refresh-secret') // JWT_REFRESH_SECRET
         .mockReturnValueOnce('7d'); // JWT_REFRESH_TOKEN_TTL
+      configService.get.mockReturnValue('7d'); // JWT_REFRESH_TOKEN_TTL for refresh token expiration calculation
 
       // @ts-expect-error: private method mock
       handler.generateRefreshTokenId = jest.fn().mockReturnValue(mockRefreshTokenId);

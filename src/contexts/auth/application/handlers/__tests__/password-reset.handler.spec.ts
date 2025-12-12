@@ -1,5 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { EventBus } from '@nestjs/cqrs';
+import { ConfigService } from '@nestjs/config';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { RequestPasswordResetHandler } from '../request-password-reset.handler';
 import { ResetPasswordHandler } from '../reset-password.handler';
@@ -65,6 +66,12 @@ describe('Password Reset Handlers', () => {
         {
           provide: EventBus,
           useValue: eventBus,
+        },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn().mockReturnValue(1), // PASSWORD_RESET_TOKEN_TTL_HOURS default
+          },
         },
       ],
     }).compile();
