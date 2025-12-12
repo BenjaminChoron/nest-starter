@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "1234567-89ab-cdef-0123-456789abcdef",
     "name": "Nest Starter API",
-    "description": "Collection for testing the Nest Starter API endpoints. This collection includes authentication and user management endpoints with comprehensive test cases.\n\nSetup:\n1. Make sure the API is running at {{base_url}}\n2. Set up environment variables\n3. Run the collection in the following order:\n   - Get CSRF Token\n   - Register\n   - Verify Email\n   - Login\n   - Get Current User\n   - Create User\n   - Update User Profile\n   - Get User by ID\n   - Get All Users (Admin only)\n\nNode.js Requirements:\n- Node.js v20 or higher is required\n\nPassword Requirements:\n- Length: 8-64 characters\n- Must contain at least one uppercase letter\n- Must contain at least one lowercase letter\n- Must contain at least one number\n- Must contain at least one special character (@$!%*?&)\n\nCSRF Protection:\n- All mutating requests (POST, PUT, DELETE) require a CSRF token\n- Token is automatically obtained from GET requests\n- Token must be included in the x-csrf-token header\n\nNew Features (NestJS 11):\n- Built-in JSON logger support\n- ParseDatePipe for date validation\n- WebDAV HTTP methods support\n- Enhanced error messages with intrinsic exceptions",
+    "description": "Collection for testing the Nest Starter API endpoints. This collection includes authentication, user management, and email endpoints with comprehensive test cases.\n\nSetup:\n1. Make sure the API is running at {{base_url}}\n2. Set up environment variables\n3. Run the collection in the following order:\n   - Get CSRF Token\n   - Register\n   - Verify Email\n   - Login\n   - Get Current User\n   - Create User\n   - Update User Profile\n   - Get User by ID\n   - Get All Users (Admin only)\n\nAuthentication Endpoints:\n- POST /auth/register - Register a new user (first user becomes superAdmin)\n- POST /auth/login - Authenticate user and receive tokens\n- GET /auth/verify - Verify email address\n- POST /auth/refresh - Get new access token using refresh token\n- POST /auth/logout - Invalidate refresh token\n- GET /auth/me - Get current user profile\n- POST /auth/password-reset/request - Request password reset\n- POST /auth/password-reset - Reset password with token\n- POST /auth/invite-user - Invite a new user (SuperAdmin only)\n- POST /auth/complete-profile - Complete user profile with token from invitation email\n\nUser Management Endpoints:\n- POST /users - Create a new user profile\n- GET /users - Get all users (requires admin role)\n- GET /users/:id - Get user by ID (requires authentication)\n- PUT /users/:id - Update user profile (requires authentication)\n- PUT /users/:id/profile-picture - Upload profile picture (requires authentication)\n- PATCH /users/:id/role - Update user roles (SuperAdmin only)\n\nOther Endpoints:\n- GET /csrf - Get CSRF token\n- POST /mail - Send email using templates\n\nNode.js Requirements:\n- Node.js v20 or higher is required\n\nPassword Requirements:\n- Length: 8-64 characters\n- Must contain at least one uppercase letter\n- Must contain at least one lowercase letter\n- Must contain at least one number\n- Must contain at least one special character (@$!%*?&)\n\nCSRF Protection:\n- All mutating requests (POST, PUT, DELETE, PATCH) require a CSRF token\n- Token is automatically obtained from GET requests\n- Token must be included in the x-csrf-token header\n\nRoles:\n- superAdmin: The first user created automatically receives this role. Only superAdmin can invite users and change user roles.\n- admin: Can access admin-only endpoints\n- user: Standard user role\n\nNew Features (NestJS 11):\n- Built-in JSON logger support\n- ParseDatePipe for date validation\n- WebDAV HTTP methods support\n- Enhanced error messages with intrinsic exceptions",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -192,6 +192,12 @@
                   "    pm.expect(jsonData).to.have.property('refresh_token');",
                   "    pm.expect(jsonData.refresh_token).to.be.a('string');",
                   "    pm.expect(jsonData.refresh_token).to.match(/^[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+$/);",
+                  "    pm.expect(jsonData).to.have.property('user');",
+                  "    pm.expect(jsonData.user).to.be.an('object');",
+                  "    pm.expect(jsonData.user).to.have.property('id');",
+                  "    pm.expect(jsonData.user).to.have.property('email');",
+                  "    pm.expect(jsonData.user).to.have.property('roles');",
+                  "    pm.expect(jsonData.user).to.have.property('isEmailVerified');",
                   "});",
                   "",
                   "// Save tokens",
@@ -264,6 +270,12 @@
                   "    pm.expect(jsonData).to.have.property('refresh_token');",
                   "    pm.expect(jsonData.refresh_token).to.be.a('string');",
                   "    pm.expect(jsonData.refresh_token).to.match(/^[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+$/);",
+                  "    pm.expect(jsonData).to.have.property('user');",
+                  "    pm.expect(jsonData.user).to.be.an('object');",
+                  "    pm.expect(jsonData.user).to.have.property('id');",
+                  "    pm.expect(jsonData.user).to.have.property('email');",
+                  "    pm.expect(jsonData.user).to.have.property('roles');",
+                  "    pm.expect(jsonData.user).to.have.property('isEmailVerified');",
                   "});",
                   "",
                   "// Save new tokens",
@@ -567,6 +579,172 @@
               ]
             },
             "description": "Reset password using the token received via email. The new password must meet the same requirements as registration."
+          }
+        },
+        {
+          "name": "Invite User",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Add CSRF token to request if available",
+                  "if (pm.environment.get('csrf_token')) {",
+                  "    pm.request.headers.add({",
+                  "        key: 'x-csrf-token',",
+                  "        value: pm.environment.get('csrf_token')",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Parse response",
+                  "var jsonData = JSON.parse(responseBody);",
+                  "",
+                  "// Test successful invitation",
+                  "pm.test(\"Status code is 201 Created\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "// Validate response structure",
+                  "pm.test(\"Response has success message\", function () {",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData.message).to.equal('User invitation sent successfully. Please check your email for profile creation instructions.');",
+                  "});",
+                  "",
+                  "// Test error cases",
+                  "if (pm.response.code === 401) {",
+                  "    pm.test(\"Unauthorized error structure\", function () {",
+                  "        pm.expect(jsonData).to.have.property('message');",
+                  "        pm.expect(jsonData.message).to.be.oneOf(['Unauthorized', 'SuperAdmin access required']);",
+                  "    });",
+                  "}",
+                  "",
+                  "if (pm.response.code === 400) {",
+                  "    pm.test(\"Bad request error structure\", function () {",
+                  "        pm.expect(jsonData).to.have.property('message');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"{{invite_email}}\",\n    \"role\": \"user\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/invite-user",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "invite-user"]
+            },
+            "description": "SuperAdmin can invite a new user by providing email and role. An email with profile creation link will be sent. Role must be either 'admin' or 'user'."
+          }
+        },
+        {
+          "name": "Complete Profile",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Add CSRF token to request if available",
+                  "if (pm.environment.get('csrf_token')) {",
+                  "    pm.request.headers.add({",
+                  "        key: 'x-csrf-token',",
+                  "        value: pm.environment.get('csrf_token')",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Parse response",
+                  "var jsonData = JSON.parse(responseBody);",
+                  "",
+                  "// Test successful profile completion",
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Validate response structure",
+                  "pm.test(\"Response has success message\", function () {",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData.message).to.equal('Profile created successfully. You can now log in.');",
+                  "});",
+                  "",
+                  "// Test error cases",
+                  "if (pm.response.code === 400) {",
+                  "    pm.test(\"Bad request error structure\", function () {",
+                  "        pm.expect(jsonData).to.have.property('message');",
+                  "        const validMessages = [",
+                  "            'Invalid profile creation token',",
+                  "            'Profile creation token has expired'",
+                  "        ];",
+                  "        pm.expect(validMessages).to.include(jsonData.message);",
+                  "    });",
+                  "}",
+                  "",
+                  "if (pm.response.code === 404) {",
+                  "    pm.test(\"Not found error structure\", function () {",
+                  "        pm.expect(jsonData).to.have.property('message');",
+                  "        pm.expect(jsonData.message).to.equal('User not found');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"password\": \"{{password}}\",\n    \"firstName\": \"{{test_first_name}}\",\n    \"lastName\": \"{{test_last_name}}\",\n    \"profilePicture\": \"{{test_profile_picture}}\",\n    \"phone\": \"{{test_phone}}\",\n    \"address\": \"{{test_address}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/complete-profile?token={{profile_token}}",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "complete-profile"],
+              "query": [
+                {
+                  "key": "token",
+                  "value": "{{profile_token}}",
+                  "description": "Profile creation token received via email invitation"
+                }
+              ]
+            },
+            "description": "Complete user profile using the token received via email invitation. Password must meet the same requirements as registration."
           }
         }
       ]
@@ -902,6 +1080,176 @@
               ]
             },
             "description": "Upload and update user profile picture (requires authentication). Supports jpg, jpeg, png, and gif formats. Maximum file size is 5MB."
+          }
+        },
+        {
+          "name": "Update User Role",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Add CSRF token to request if available",
+                  "if (pm.environment.get('csrf_token')) {",
+                  "    pm.request.headers.add({",
+                  "        key: 'x-csrf-token',",
+                  "        value: pm.environment.get('csrf_token')",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Parse response",
+                  "var jsonData = JSON.parse(responseBody);",
+                  "",
+                  "// Test successful role update",
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Validate response structure",
+                  "pm.test(\"Response has success message\", function () {",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData.message).to.equal('User role updated successfully');",
+                  "});",
+                  "",
+                  "// Test error cases",
+                  "if (pm.response.code === 401) {",
+                  "    pm.test(\"Unauthorized error structure\", function () {",
+                  "        pm.expect(jsonData).to.have.property('message');",
+                  "        pm.expect(jsonData.message).to.be.oneOf(['Unauthorized', 'SuperAdmin access required']);",
+                  "    });",
+                  "}",
+                  "",
+                  "if (pm.response.code === 400) {",
+                  "    pm.test(\"Bad request error structure\", function () {",
+                  "        pm.expect(jsonData).to.have.property('message');",
+                  "    });",
+                  "}",
+                  "",
+                  "if (pm.response.code === 404) {",
+                  "    pm.test(\"Not found error structure\", function () {",
+                  "        pm.expect(jsonData).to.have.property('message');",
+                  "        pm.expect(jsonData.message).to.include('not found');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"roles\": [\"admin\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/:id/role",
+              "host": ["{{base_url}}"],
+              "path": ["users", ":id", "role"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{user_id}}",
+                  "description": "User ID"
+                }
+              ]
+            },
+            "description": "SuperAdmin can update user roles. Only 'admin' and 'user' roles can be assigned. Cannot modify superAdmin role."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Mail",
+      "description": "Email sending endpoints for testing email functionality",
+      "item": [
+        {
+          "name": "Send Email",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Add CSRF token to request if available",
+                  "if (pm.environment.get('csrf_token')) {",
+                  "    pm.request.headers.add({",
+                  "        key: 'x-csrf-token',",
+                  "        value: pm.environment.get('csrf_token')",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Parse response",
+                  "var jsonData = JSON.parse(responseBody);",
+                  "",
+                  "// Test successful email send",
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Validate response structure",
+                  "pm.test(\"Response has success structure\", function () {",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData).to.have.property('status');",
+                  "    pm.expect(jsonData.status).to.equal('success');",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData.message).to.equal('Email sent successfully');",
+                  "});",
+                  "",
+                  "// Test error cases",
+                  "if (pm.response.code === 400) {",
+                  "    pm.test(\"Bad request error structure\", function () {",
+                  "        pm.expect(jsonData).to.have.property('message');",
+                  "        pm.expect(jsonData.message).to.be.an('array');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"to\": \"{{email}}\",\n    \"subject\": \"Test Email\",\n    \"template\": \"email-verification-template\",\n    \"context\": {\n        \"verificationLink\": \"https://example.com/verify?token=abc123\"\n    }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/mail",
+              "host": ["{{base_url}}"],
+              "path": ["mail"]
+            },
+            "description": "Send an email using the specified template. Available templates: 'email-verification-template', 'password-reset-template', 'profile-creation-template'."
           }
         }
       ]
