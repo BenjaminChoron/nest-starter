@@ -10,8 +10,23 @@ import helmet from 'helmet';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Get ConfigService
+  const configService = app.get(ConfigService);
+
   // Enable CORS
-  app.enableCors();
+  const corsOrigin = configService.get<string>('CORS_ORIGIN');
+  const corsCredentials = configService.get<string>('CORS_CREDENTIALS', 'true') === 'true';
+  const corsMethods = configService.get<string>('CORS_METHODS', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
+
+  if (corsOrigin) {
+    app.enableCors({
+      origin: corsOrigin.split(',').map((origin: string) => origin.trim()),
+      credentials: corsCredentials,
+      methods: corsMethods.split(',').map((method: string) => method.trim()),
+    });
+  } else {
+    app.enableCors();
+  }
 
   // Security middleware
   app.use(helmet());
@@ -21,8 +36,13 @@ async function bootstrap() {
 
   // Global exception filter
   const httpAdapter = app.get(HttpAdapterHost);
-  const configService = app.get(ConfigService);
   app.useGlobalFilters(new GlobalExceptionFilter(httpAdapter, configService));
+
+  const port = configService.get<number>('PORT', 3000);
+  const swaggerServerUrl = configService.get<string>('SWAGGER_SERVER_URL', `http://localhost:${port}`);
+  const swaggerContactName = configService.get<string>('SWAGGER_CONTACT_NAME', 'Your Name');
+  const swaggerContactUrl = configService.get<string>('SWAGGER_CONTACT_URL', 'https://yourwebsite.com');
+  const swaggerContactEmail = configService.get<string>('SWAGGER_CONTACT_EMAIL', 'contact@yourwebsite.com');
 
   const config = new DocumentBuilder()
     .setTitle('NestJS Starter API')
@@ -65,8 +85,8 @@ Most endpoints require Bearer token authentication. To get a token:
     `,
     )
     .setVersion('1.0')
-    .setContact('Benjamin Choron', 'https://benjamin-choron.com', 'contact@benjamin-choron.com')
-    .addServer('http://localhost:3000', 'Local Development')
+    .setContact(swaggerContactName, swaggerContactUrl, swaggerContactEmail)
+    .addServer(swaggerServerUrl, 'Local Development')
     .addBearerAuth(
       {
         type: 'http',
@@ -89,7 +109,7 @@ Most endpoints require Bearer token authentication. To get a token:
     },
   });
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(port);
 }
 
 void bootstrap().catch((error) => {

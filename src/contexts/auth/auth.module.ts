@@ -57,7 +57,9 @@ const sagas = [EmailVerificationSaga, UserInvitationSaga];
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         secret: await configService.getOrThrow('JWT_SECRET'),
-        signOptions: { expiresIn: '1h' },
+        signOptions: {
+          expiresIn: configService.get('JWT_ACCESS_TOKEN_TTL', '1h'),
+        },
       }),
       inject: [ConfigService],
     }),

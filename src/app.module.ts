@@ -20,51 +20,56 @@ import * as path from 'path';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    ThrottlerModule.forRoot([
-      {
-        name: 'short',
-        ttl: 1000, // 1 second
-        limit: 3, // 3 requests per second for auth endpoints
-      },
-      {
-        name: 'medium',
-        ttl: 60000, // 1 minute
-        limit: 10, // 10 requests per minute for moderately sensitive endpoints
-      },
-      {
-        name: 'long',
-        ttl: 3600000, // 1 hour
-        limit: 100, // 100 requests per hour for highly sensitive operations
-      },
-    ]),
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => [
+        {
+          name: 'short',
+          ttl: configService.get('THROTTLE_SHORT_TTL', 1000),
+          limit: configService.get('THROTTLE_SHORT_LIMIT', 3),
+        },
+        {
+          name: 'medium',
+          ttl: configService.get('THROTTLE_MEDIUM_TTL', 60000),
+          limit: configService.get('THROTTLE_MEDIUM_LIMIT', 10),
+        },
+        {
+          name: 'long',
+          ttl: configService.get('THROTTLE_LONG_TTL', 3600000),
+          limit: configService.get('THROTTLE_LONG_LIMIT', 100),
+        },
+      ],
+      inject: [ConfigService],
+    }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: getTypeOrmConfig,
       inject: [ConfigService],
     }),
     MailerModule.forRootAsync({
-      useFactory: () => ({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
         transport: {
-          host: process.env.SMTP_HOST,
-          port: process.env.SMTP_PORT ? +process.env.SMTP_PORT : 587,
-          secure: false,
-          ignoreTLS: false,
-          requireTLS: true,
+          host: configService.get('SMTP_HOST'),
+          port: configService.get('SMTP_PORT', 587),
+          secure: configService.get('SMTP_SECURE', 'false') === 'true',
+          ignoreTLS: configService.get('SMTP_IGNORE_TLS', 'false') === 'true',
+          requireTLS: configService.get('SMTP_REQUIRE_TLS', 'true') === 'true',
           pool: true,
-          maxConnections: 5,
-          maxMessages: 100,
-          rateDelta: 1000,
-          rateLimit: 10,
+          maxConnections: configService.get('SMTP_MAX_CONNECTIONS', 5),
+          maxMessages: configService.get('SMTP_MAX_MESSAGES', 100),
+          rateDelta: configService.get('SMTP_RATE_DELTA', 1000),
+          rateLimit: configService.get('SMTP_RATE_LIMIT', 10),
           auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS,
+            user: configService.get('SMTP_USER'),
+            pass: configService.get('SMTP_PASS'),
           },
           tls: {
-            rejectUnauthorized: process.env.NODE_ENV === 'production',
+            rejectUnauthorized: configService.get('NODE_ENV', 'development') === 'production',
           },
         },
         defaults: {
-          from: process.env.SMTP_FROM,
+          from: configService.get('SMTP_FROM'),
         },
         template: {
           dir: path.join(process.cwd(), 'templates'),
@@ -74,6 +79,7 @@ import * as path from 'path';
           },
         },
       }),
+      inject: [ConfigService],
     }),
     SharedModule,
     AuthModule,

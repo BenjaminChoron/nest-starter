@@ -13,14 +13,22 @@ export class CloudinaryService {
     });
   }
 
-  async uploadImage(file: Express.Multer.File, folder: string = 'profile-pictures'): Promise<string> {
+  async uploadImage(file: Express.Multer.File, folder?: string): Promise<string> {
+    const defaultFolder = this.configService.get<string>('CLOUDINARY_DEFAULT_FOLDER', 'profile-pictures');
+    const imageWidth = this.configService.get<string | number>('CLOUDINARY_IMAGE_WIDTH', 500);
+    const imageHeight = this.configService.get<string | number>('CLOUDINARY_IMAGE_HEIGHT', 500);
+    const imageQuality = this.configService.get<string>('CLOUDINARY_IMAGE_QUALITY', 'auto:good');
+
     return new Promise((resolve, reject) => {
       const upload = cloudinary.uploader.upload_stream(
         {
-          folder,
+          folder: folder || defaultFolder,
           resource_type: 'image',
           allowed_formats: ['jpg', 'jpeg', 'png', 'gif'],
-          transformation: [{ width: 500, height: 500, crop: 'limit' }, { quality: 'auto:good' }],
+          transformation: [
+            { width: Number(imageWidth), height: Number(imageHeight), crop: 'limit' },
+            { quality: imageQuality },
+          ],
         },
         (error, result) => {
           if (error) return reject(new Error(error.message || 'Upload failed'));

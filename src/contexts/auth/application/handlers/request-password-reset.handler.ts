@@ -5,6 +5,7 @@ import { RequestPasswordResetCommand } from '../commands/request-password-reset.
 import { IUserRepository, USER_REPOSITORY } from '../../domain/repositories/user.repository.interface';
 import { Email } from '../../domain/value-objects/email.value-object';
 import { PasswordResetRequestedEvent } from '../../domain/events/password-reset-requested.event';
+import { ConfigService } from '@nestjs/config';
 
 @CommandHandler(RequestPasswordResetCommand)
 export class RequestPasswordResetHandler implements ICommandHandler<RequestPasswordResetCommand> {
@@ -12,6 +13,7 @@ export class RequestPasswordResetHandler implements ICommandHandler<RequestPassw
     @Inject(USER_REPOSITORY)
     private readonly userRepository: IUserRepository,
     private readonly eventBus: EventBus,
+    private readonly configService: ConfigService,
   ) {}
 
   async execute(command: RequestPasswordResetCommand): Promise<void> {
@@ -26,7 +28,8 @@ export class RequestPasswordResetHandler implements ICommandHandler<RequestPassw
     // Generate password reset token
     const resetToken = randomUUID();
     const tokenExpiresAt = new Date();
-    tokenExpiresAt.setHours(tokenExpiresAt.getHours() + 1); // Token expires in 1 hour
+    const ttlHours = this.configService.get<number>('PASSWORD_RESET_TOKEN_TTL_HOURS', 1);
+    tokenExpiresAt.setHours(tokenExpiresAt.getHours() + ttlHours);
     user.setPasswordResetToken(resetToken, tokenExpiresAt);
 
     await this.userRepository.save(user);

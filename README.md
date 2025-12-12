@@ -150,34 +150,87 @@ test/                # Test files
 
 ### Configuration
 
-The project uses environment variables for configuration. Required variables include:
+The project uses environment variables for configuration. Create a `.env` file in the root directory with the following variables:
+
+#### Application Configuration
+
+- `NODE_ENV` - Environment mode (development, production, test). Default: `development`
+- `PORT` - Server port. Default: `3000`
 
 #### Database Configuration
 
-- `DB_HOST` - Database host
-- `DB_PORT` - Database port
-- `DB_USERNAME` - Database username
-- `DB_PASSWORD` - Database password
-- `DB_DATABASE` - Database name
+- `DB_HOST` - Database host. Default: `localhost`
+- `DB_PORT` - Database port. Default: `5432`
+- `DB_USERNAME` - Database username. Default: `postgres`
+- `DB_PASSWORD` - Database password. Default: `postgres`
+- `DB_NAME` - Database name. Default: `nest_db`
+- `DB_SYNCHRONIZE` - (Optional) Enable TypeORM auto-synchronization. Overrides NODE_ENV default
+- `DB_LOGGING` - (Optional) Enable database query logging. Overrides NODE_ENV default
 
 #### JWT Configuration
 
-- `JWT_SECRET` - Secret key for JWT tokens
+- `JWT_SECRET` - **Required** - Secret key for JWT access tokens
+- `JWT_ACCESS_TOKEN_TTL` - Access token expiration time (e.g., `1h`, `15m`). Default: `1h`
+- `JWT_REFRESH_SECRET` - **Required** - Secret key for JWT refresh tokens
+- `JWT_REFRESH_TOKEN_TTL` - Refresh token expiration time (e.g., `7d`, `14d`). Default: `7d`
+
+#### Token Expiration Configuration (Optional)
+
+- `EMAIL_VERIFICATION_TOKEN_TTL_HOURS` - Email verification token expiration in hours. Default: `24`
+- `PASSWORD_RESET_TOKEN_TTL_HOURS` - Password reset token expiration in hours. Default: `1`
+- `PROFILE_CREATION_TOKEN_TTL_DAYS` - Profile creation token expiration in days. Default: `7`
+- `REFRESH_TOKEN_TTL_DAYS` - Refresh token expiration in days (should match JWT_REFRESH_TOKEN_TTL). Default: `7`
 
 #### SMTP Configuration
 
-- `SMTP_HOST` - SMTP server host
-- `SMTP_PORT` - SMTP server port
-- `SMTP_FROM` - Default "from" email address
-- `SMTP_USER` - SMTP username
-- `SMTP_PASS` - SMTP password
-- `FRONTEND_URL` - Frontend URL for email links (e.g., http://localhost:4200)
+- `SMTP_HOST` - **Required** - SMTP server host
+- `SMTP_PORT` - SMTP server port. Default: `587`
+- `SMTP_USER` - **Required** - SMTP username
+- `SMTP_PASS` - **Required** - SMTP password
+- `SMTP_FROM` - **Required** - Default "from" email address
+- `SMTP_SECURE` - Use secure connection (SSL/TLS). Default: `false`
+- `SMTP_IGNORE_TLS` - Ignore TLS certificate errors. Default: `false`
+- `SMTP_REQUIRE_TLS` - Require TLS connection. Default: `true`
+- `SMTP_MAX_CONNECTIONS` - Maximum SMTP connections in pool. Default: `5`
+- `SMTP_MAX_MESSAGES` - Maximum messages per connection. Default: `100`
+- `SMTP_RATE_DELTA` - Rate limit time window in milliseconds. Default: `1000`
+- `SMTP_RATE_LIMIT` - Maximum messages per rate window. Default: `10`
+
+#### Frontend Configuration
+
+- `FRONTEND_URL` - **Required** - Frontend URL for email links (e.g., `http://localhost:4200`)
+
+#### CORS Configuration (Optional)
+
+- `CORS_ORIGIN` - Allowed origins (comma-separated). If not set, allows all origins
+- `CORS_CREDENTIALS` - Allow credentials. Default: `true`
+- `CORS_METHODS` - Allowed HTTP methods (comma-separated). Default: `GET,POST,PUT,DELETE,PATCH,OPTIONS`
+
+#### Swagger Configuration (Optional)
+
+- `SWAGGER_SERVER_URL` - Swagger server URL. Default: `http://localhost:3000`
+- `SWAGGER_CONTACT_NAME` - Swagger contact name. Default: `Benjamin Choron`
+- `SWAGGER_CONTACT_URL` - Swagger contact URL. Default: `https://benjamin-choron.com`
+- `SWAGGER_CONTACT_EMAIL` - Swagger contact email. Default: `contact@benjamin-choron.com`
+
+#### Throttler Configuration (Optional)
+
+- `THROTTLE_SHORT_TTL` - Short throttle time window in milliseconds. Default: `1000` (1 second)
+- `THROTTLE_SHORT_LIMIT` - Short throttle request limit. Default: `3`
+- `THROTTLE_MEDIUM_TTL` - Medium throttle time window in milliseconds. Default: `60000` (1 minute)
+- `THROTTLE_MEDIUM_LIMIT` - Medium throttle request limit. Default: `10`
+- `THROTTLE_LONG_TTL` - Long throttle time window in milliseconds. Default: `3600000` (1 hour)
+- `THROTTLE_LONG_LIMIT` - Long throttle request limit. Default: `100`
 
 #### Cloudinary Configuration
 
-- `CLOUDINARY_CLOUD_NAME` - Your Cloudinary cloud name
-- `CLOUDINARY_API_KEY` - Your Cloudinary API key
-- `CLOUDINARY_API_SECRET` - Your Cloudinary API secret
+- `CLOUDINARY_CLOUD_NAME` - **Required** - Your Cloudinary cloud name
+- `CLOUDINARY_API_KEY` - **Required** - Your Cloudinary API key
+- `CLOUDINARY_API_SECRET` - **Required** - Your Cloudinary API secret
+- `CLOUDINARY_DEFAULT_FOLDER` - Default folder for uploads. Default: `profile-pictures`
+- `CLOUDINARY_IMAGE_WIDTH` - Default image width in pixels. Default: `500`
+- `CLOUDINARY_IMAGE_HEIGHT` - Default image height in pixels. Default: `500`
+- `CLOUDINARY_IMAGE_QUALITY` - Default image quality. Default: `auto:good`
 
 ### File Upload Features
 

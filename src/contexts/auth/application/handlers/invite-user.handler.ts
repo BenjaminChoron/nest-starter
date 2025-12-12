@@ -9,6 +9,7 @@ import { UserAlreadyExistsException } from 'src/contexts/shared/application/exce
 import { Email } from '../../domain/value-objects/email.value-object';
 import { Password } from '../../domain/value-objects/password.value-object';
 import { UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 @CommandHandler(InviteUserCommand)
 export class InviteUserHandler implements ICommandHandler<InviteUserCommand> {
@@ -16,6 +17,7 @@ export class InviteUserHandler implements ICommandHandler<InviteUserCommand> {
     @Inject(USER_REPOSITORY)
     private readonly userRepository: IUserRepository,
     private readonly eventBus: EventBus,
+    private readonly configService: ConfigService,
   ) {}
 
   async execute(command: InviteUserCommand): Promise<void> {
@@ -42,7 +44,8 @@ export class InviteUserHandler implements ICommandHandler<InviteUserCommand> {
     // Generate profile creation token
     const profileCreationToken = randomUUID();
     const tokenExpiresAt = new Date();
-    tokenExpiresAt.setDate(tokenExpiresAt.getDate() + 7); // Token expires in 7 days
+    const ttlDays = this.configService.get<number>('PROFILE_CREATION_TOKEN_TTL_DAYS', 7);
+    tokenExpiresAt.setDate(tokenExpiresAt.getDate() + ttlDays);
     user.setProfileCreationToken(profileCreationToken, tokenExpiresAt);
 
     await this.userRepository.save(user);

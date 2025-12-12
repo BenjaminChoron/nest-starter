@@ -8,6 +8,7 @@ import { UserRegisteredEvent } from '../../domain/events/user-registered.event';
 import { UserAlreadyExistsException } from 'src/contexts/shared/application/exceptions/user-already-exists.exception';
 import { Email } from '../../domain/value-objects/email.value-object';
 import { Password } from '../../domain/value-objects/password.value-object';
+import { ConfigService } from '@nestjs/config';
 
 @CommandHandler(RegisterUserCommand)
 export class RegisterUserHandler implements ICommandHandler<RegisterUserCommand> {
@@ -15,6 +16,7 @@ export class RegisterUserHandler implements ICommandHandler<RegisterUserCommand>
     @Inject(USER_REPOSITORY)
     private readonly userRepository: IUserRepository,
     private readonly eventBus: EventBus,
+    private readonly configService: ConfigService,
   ) {}
 
   async execute(command: RegisterUserCommand): Promise<void> {
@@ -37,7 +39,8 @@ export class RegisterUserHandler implements ICommandHandler<RegisterUserCommand>
     // Generate verification token
     const verificationToken = randomUUID();
     const tokenExpiresAt = new Date();
-    tokenExpiresAt.setHours(tokenExpiresAt.getHours() + 24); // Token expires in 24 hours
+    const ttlHours = this.configService.get<number>('EMAIL_VERIFICATION_TOKEN_TTL_HOURS', 24);
+    tokenExpiresAt.setHours(tokenExpiresAt.getHours() + ttlHours);
     user.setVerificationToken(verificationToken, tokenExpiresAt);
 
     await this.userRepository.save(user);

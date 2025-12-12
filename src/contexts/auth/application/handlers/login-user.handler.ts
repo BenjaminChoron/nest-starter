@@ -60,7 +60,10 @@ export class LoginUserHandler implements ICommandHandler<LoginUserCommand> {
 
     // Save refresh token to user
     const refreshTokenExpiresAt = new Date();
-    refreshTokenExpiresAt.setDate(refreshTokenExpiresAt.getDate() + 7);
+    // Parse JWT_REFRESH_TOKEN_TTL to get days (e.g., "7d" -> 7, "14d" -> 14)
+    const refreshTokenTtl = this.configService.get<string>('JWT_REFRESH_TOKEN_TTL', '7d');
+    const ttlDays = parseInt(refreshTokenTtl.replace(/[^0-9]/g, ''), 10) || 7;
+    refreshTokenExpiresAt.setDate(refreshTokenExpiresAt.getDate() + ttlDays);
     user.setRefreshToken(refreshPayload.refreshToken, refreshTokenExpiresAt);
     await this.userRepository.save(user);
 
